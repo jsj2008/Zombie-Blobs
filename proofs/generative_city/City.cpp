@@ -1,5 +1,7 @@
 #include "City.hpp"
 
+#include <cstdlib>
+
 City::City( void ) {
     Generate();
 }
