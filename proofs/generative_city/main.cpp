@@ -1,8 +1,5 @@
-#ifdef __cplusplus
-    #include <cstdlib>
-#else
-    #include <stdlib.h>
-#endif
+#include <cstdlib>
+
 #ifdef __APPLE__
 #include <SDL/SDL.h>
 #else
