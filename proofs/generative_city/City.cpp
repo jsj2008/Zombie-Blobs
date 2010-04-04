@@ -6,15 +6,14 @@ City::City( void ) {
     Generate();
 }
 
-void City::Generate( )
-{
-    for( int i = 0; i < CITY_W; i++ )
-    {
-        for( int j = 0; j < CITY_H; j++ )
-        {
+/**
+ * Creates a randomly generated city.
+ */
+void City::Generate(void) {
+    for(int i = 0; i < CITY_W; i++) {
+        for(int j = 0; j < CITY_H; j++) {
             hmap[i][j] = 1;
-            if( i == 0 || j == 0 || i == CITY_W-1 || j == CITY_H-1 )
-            {
+            if(i == 0 || j == 0 || i == CITY_W-1 || j == CITY_H-1) {
                 hmap[i][j] = 0;
             }
         }
@@ -27,8 +26,7 @@ void City::Generate( )
 
     int max_tries = CITY_W*CITY_H;
 
-    while( max_tries > 0 && divisions < max_divisions )
-    {
+    while(max_tries > 0 && divisions < max_divisions) {
 
         int divx = rand()%CITY_W;
         int divy = rand()%CITY_H;
@@ -37,36 +35,30 @@ void City::Generate( )
         int street_check = 1;
 
 
-        for( int i = divx - min_spread; i < divx + min_spread; i++ )
-        {
-            for( int j = divy - min_spread; j < divy + min_spread; j++ )
-            {
-                if( i >= 0 && j >= 0 && i < CITY_W && j < CITY_H )
-                {
+        for(int i = divx - min_spread; i < divx + min_spread; i++) {
+            for(int j = divy - min_spread; j < divy + min_spread; j++) {
+                if(i >= 0 && j >= 0 && i < CITY_W && j < CITY_H) {
                     street_check *= hmap[i][j];
                 }
             }
         }
 
-        if( street_check == 0 )
-        {
+        if(street_check == 0) {
             max_tries--;
             continue;
         }
 
 
-        for ( int dir = 0; dir < 4; dir ++ )
-        {
+        for(int dir = 0; dir < 4; dir ++) {
             int cx = divx;
             int cy = divy;
 
             int mxr = CITY_W > CITY_H ? CITY_W : CITY_H;
 
-            while( mxr > 0 )
-            {
+            while(mxr > 0) {
                 // bumped into a street or border?
-                if( cx < 0 || cy < 0 || cx >= CITY_W || cy >= CITY_H  || ( hmap[cx][cy] == 0 && (cx != divx || cy != divy) ) )
-                {
+                if(cx < 0 || cy < 0 || cx >= CITY_W || cy >= CITY_H
+                    || ( hmap[cx][cy] == 0 && (cx != divx || cy != divy) )) {
                     break;
                 }
 
@@ -86,18 +78,16 @@ void City::Generate( )
 
     // Come up with some heights for the remaining buildings between streets
 
-    for( int i = 0; i < CITY_W; i++ )
-    {
-        for( int j = 0; j < CITY_H; j++ )
-        {
-            int height = 2+rand()%10; // Give a random height for the building, min 2
+    for(int i = 0; i < CITY_W; i++) {
+        for(int j = 0; j < CITY_H; j++) {
+
+            // Select a random height for the building, min 2
+            int height = 2+rand()%10;
+
             int si, sj;
-            for( si = i; si < CITY_W; si++ )
-            {
-                for( sj = j; sj < CITY_H; sj++ )
-                {
-                    if( hmap[si][sj] != 1 )
-                    {
+            for(si = i; si < CITY_W; si++) {
+                for(sj = j; sj < CITY_H; sj++) {
+                    if(hmap[si][sj] != 1) {
                         break;
                     }
                     hmap[si][sj] = height;
@@ -105,14 +95,14 @@ void City::Generate( )
             }
         }
     }
-
-
 }
 
-int City::getHeight( int x, int y )
-{
-    if( x < 0 || y < 0 || x > CITY_W || y > CITY_H )
-    {
+/**
+ * A simple function for getting the "height" data for a given x/y coordinate
+ * (building height at the moment)
+ */
+int City::getHeight(int x, int y) {
+    if(x < 0 || y < 0 || x > CITY_W || y > CITY_H) {
         return 0;
     }
 

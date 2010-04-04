@@ -7,13 +7,12 @@
 #define CITY_W 200
 #define CITY_H 200
 
-class City
-{
+class City {
 
 public:
-    City( void );
+    City(void);
     int getHeight(int x, int y);
-    void Generate( );
+    void Generate(void);
 
 
 private:
