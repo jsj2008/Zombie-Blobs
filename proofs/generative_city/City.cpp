@@ -22,7 +22,7 @@ void City::Generate(void) {
     // Subdivide the place with streets (0 = a tile of street)
     int max_divisions = CITY_W*CITY_H/1000;
     int divisions = 0;
-    int min_spread = 10;
+    int min_spread = 4;
 
     int max_tries = CITY_W*CITY_H;
 
@@ -82,7 +82,7 @@ void City::Generate(void) {
         for(int j = 0; j < CITY_H; j++) {
 
             // Select a random height for the building, min 2
-            int height = 2+rand()%10;
+            int height = 2+(rand()%1500)*0.01f;
 
             int si, sj;
             for(si = i; si < CITY_W; si++) {

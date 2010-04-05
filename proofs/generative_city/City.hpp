@@ -4,8 +4,8 @@
 #include <vector>
 #include "Block.hpp"
 
-#define CITY_W 200
-#define CITY_H 200
+#define CITY_W 150
+#define CITY_H 150
 
 class City {
 
