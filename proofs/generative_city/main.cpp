@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <cassert>
 
 #ifdef __APPLE__
 #include <SDL/SDL.h>
