@@ -7,6 +7,6 @@ Find_Package(SDL REQUIRED)
 Find_Package(OpenGL REQUIRED)
 
 include_directories(${SDL_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR})
-link_libraries(${SDL_LIBRARY} ${OPENGL_LIBRARIES})
+link_libraries(${SDL_LIBRARY} ${OPENGL_LIBRARIES} BulletDynamics BulletCollision LinearMath)
 
 add_executable(city ${SOURCES})

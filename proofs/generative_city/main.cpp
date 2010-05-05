@@ -139,12 +139,12 @@ void Draw3D(SDL_Surface *S) {
 
     // Draw the city
 
-    for (int i=0; i<city->blocks.size(); i++) {
+    for (unsigned int i=0; i<city->blocks.size(); i++) {
         glPushMatrix();
 
             btTransform trans;
             city->blocks[i]->body->getMotionState()->getWorldTransform(trans);
-            btScalar m[15];
+            btScalar m[16];
             trans.getOpenGLMatrix(m);
             glMultMatrixf(m);
 
