@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 
-City::City( void ) {
+City::City( btDiscreteDynamicsWorld &dynamicsWorld ) : world(dynamicsWorld) {
     Generate();
 }
 
@@ -20,9 +20,9 @@ void City::Generate(void) {
     }
 
     // Subdivide the place with streets (0 = a tile of street)
-    int max_divisions = CITY_W*CITY_H/1000;
+    int max_divisions = CITY_W*CITY_H/10;
     int divisions = 0;
-    int min_spread = 4;
+    int min_spread = 2;
 
     int max_tries = CITY_W*CITY_H;
 
@@ -82,7 +82,7 @@ void City::Generate(void) {
         for(int j = 0; j < CITY_H; j++) {
 
             // Select a random height for the building, min 2
-            int height = 2+(rand()%1500)*0.01f;
+            int height = 1+rand()%12;
 
             int si, sj;
             for(si = i; si < CITY_W; si++) {
@@ -95,6 +95,16 @@ void City::Generate(void) {
             }
         }
     }
+
+    // Make bloxxx out of the height data!
+    for(int i = 0; i < CITY_W; i++) {
+        for(int j = 0; j < CITY_H; j++) {
+            for(int h = 0; h < getHeight(i,j); h++) {
+                blocks.push_back( new Block(world, i, h, j, 1.0f, 1.0f, 1.0f) );
+            }
+        }
+    }
+
 }
 
 /**

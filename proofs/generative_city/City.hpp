@@ -2,22 +2,25 @@
 #define CITY_CPP_INCLUDED
 
 #include <vector>
+#include <btBulletDynamicsCommon.h>
+
 #include "Block.hpp"
 
-#define CITY_W 150
-#define CITY_H 150
+#define CITY_W 10
+#define CITY_H 7
 
 class City {
 
 public:
-    City(void);
+    City( btDiscreteDynamicsWorld &dynamicsWorld );
     int getHeight(int x, int y);
     void Generate(void);
+    std::vector<Block*> blocks;
 
 
 private:
     int hmap[CITY_W][CITY_H];
-    std::vector<Block> blocks;
+    btDiscreteDynamicsWorld &world;
 
 };
 

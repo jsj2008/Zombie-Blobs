@@ -1,13 +1,18 @@
 #ifndef BLOCK_HPP_INCLUDED
 #define BLOCK_HPP_INCLUDED
 
+#include <btBulletDynamicsCommon.h>
+
+
 class Block {
 
 public:
-    Block(float x, float y, float z, float width, float height, float depht);
+    Block(btDiscreteDynamicsWorld &dynamicsWorld, float x, float y, float z, float width, float height, float depth);
+    btRigidBody* body;
+    float w, h, d;
 
 private:
-    float x, y, z, widht, height, depth;
+    btDiscreteDynamicsWorld &world;
 
 };
 
