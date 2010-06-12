@@ -12,6 +12,11 @@
 #include "City.hpp"
 
 #include <btBulletDynamicsCommon.h>
+#include <LinearMath/btConvexHull.h>
+#include <BulletSoftBody/btSoftRigidDynamicsWorld.h>
+#include <BulletSoftBody/btSoftBody.h>
+#include <BulletSoftBody/btSoftBodyHelpers.h>
+#include <BulletSoftBody/btSoftBodyRigidBodyCollisionConfiguration.h>
 
 #define HCpPI 57.295779513082320876798154814105
 
@@ -21,8 +26,6 @@ float sphere_y = 0;
 float sphere_x = 0;
 float sphere_z = 0;
 
-typedef std::vector<Block*> ProjectileList;
-ProjectileList projectiles;
 
 void putpixel(SDL_Surface * surface, int x, int y, int r, int g, int b) {
   if(x >= 0 && y >= 0 && x < surface->w && y < surface->h) {
@@ -132,7 +135,6 @@ void unitSphere(int slices) {
 	double ct_ = cos(theta_);
 
 	for (int i=0; i <= slices; ++i) {
-		double theta = M_PI * (-0.5 + (i-1)/(double)slices);
 		theta = theta_;
 		st = st_;
 		ct = ct_;
@@ -162,6 +164,85 @@ void unitSphere(int slices) {
 		glEnd();
 	}
 }
+
+
+
+
+
+struct Projectile {
+    btSoftBody * body;
+
+    Projectile(btSoftRigidDynamicsWorld * world, btVector3 pos, btVector3 dir, btScalar mass, btScalar impulse)
+      : body(0) {
+
+      body = projectile(world, 150);
+      //body->setMass(0, 0.0f);
+      body->m_cfg.piterations = 2;
+      body->generateBendingConstraints(3);
+      body->generateClusters(64);
+      // softbody-softbody
+      body->m_cfg.collisions |= btSoftBody::fCollision::CL_SS;
+      // rigidbody-softbody
+      //body->m_cfg.collisions |= btSoftBody::fCollision::CL_RS;
+
+      // tässä välissä voisi säätää body->m_cfg.k*, kts. bulletin sorsat
+      body->randomizeConstraints();
+
+      body->setTotalMass(mass, false);
+
+      btMatrix3x3 m;
+      // orientaatiolla ei sinänsä väliä jos objektina on pallo,
+      // pistetään kuitenkin
+      m.setEulerZYX(dir.x(), dir.y(), dir.z());
+      body->scale(btVector3(.5, .5, .5));
+      body->transform(btTransform(m, pos));
+      body->setVelocity(dir * impulse);
+      body->addForce(btVector3(0, 1, 0) * impulse/4.0f);
+      //body->getCollisionShape()->setMargin(0.1f);
+
+      body->getCollisionShape()->setMargin(0.1);
+      world->addSoftBody(body);
+    }
+
+    btSoftBody * projectile(btSoftRigidDynamicsWorld * world, int resolution) {
+      return btSoftBodyHelpers::CreateEllipsoid(world->getWorldInfo(), btVector3(0,0,0), btVector3(1,1,1), resolution);
+
+      double theta, st, ct;
+
+      int n = (resolution+1) * (resolution+1);
+      btVector3 * points = new btVector3[n];
+      int p = 0;
+      for (int i=0; i <= resolution; ++i) {
+        theta = M_PI * (-0.5 + i/(double)resolution);
+        st = sin(theta);
+        ct = cos(theta);
+
+        for (int j=0; j <= resolution; ++j) {
+          double phi = 2 * M_PI * ((j-1)/(double)resolution);
+          double cp = cos(phi);
+          double sp = sin(phi);
+          double x = cp*ct;
+          double y = sp*ct;
+          double z = st;
+          points[p++] = btVector3(x, y, z);
+        }
+      }
+      /*
+        HullLibrary hl;
+        HullDesc desc(QF_TRIANGLES, n, points, 0);
+        HullResult res;
+        hl.CreateConvexHull(desc, res);
+        */
+
+      btSoftBody * body = btSoftBodyHelpers::CreateFromConvexHull(world->getWorldInfo(), points, n);
+      delete[] points;
+      return body;
+    }
+
+};
+
+typedef std::vector<Projectile*> ProjectileList;
+ProjectileList projectiles;
 
 void Draw3D(SDL_Surface *S) {
   // Move cam to some nice position
@@ -208,13 +289,41 @@ void Draw3D(SDL_Surface *S) {
   for (ProjectileList::iterator it = projectiles.begin(); it != projectiles.end(); ++it) {
     glPushMatrix();
 
-    (**it).body->getMotionState()->getWorldTransform(trans);
+    btTransform & trans = (**it).body->getWorldTransform();
     btScalar m[16];
     trans.getOpenGLMatrix(m);
     glMultMatrixf(m);
 
+    btSoftBody* softbody = (**it).body;
+    /* Each soft body contain an array of vertices (nodes/particles_mass)   */
+    btSoftBody::tNodeArray& nodes(softbody->m_nodes);
+    /* And edges (links/distances constraints)                        */
+    btSoftBody::tLinkArray& links(softbody->m_links);
+    /* And finally, faces (triangles)                                 */
+    btSoftBody::tFaceArray& faces(softbody->m_faces);
+
+    //glDisable(GL_LIGHTING);
     glColor3f(0.8, 0.4, 0.4);
-    DrawBox((**it).w, (**it).h, (**it).d);
+    glBegin(GL_TRIANGLES);
+
+    // output vertices in CCW order
+    for (int j=0; j < faces.size(); j++) {
+      glNormal3fv(faces[j].m_n[0]->m_n);
+      glVertex3fv(faces[j].m_n[0]->m_x);
+
+      glNormal3fv(faces[j].m_n[2]->m_n);
+      glVertex3fv(faces[j].m_n[2]->m_x);
+
+      glNormal3fv(faces[j].m_n[1]->m_n);
+      glVertex3fv(faces[j].m_n[1]->m_x);
+    }
+    glEnd();
+    //glEnable(GL_LIGHTING);
+    /*
+		glScalef(0.5f, 0.5f, 0.5f);
+		unitSphere(10);
+        */
+    //DrawBox((**it).w, (**it).h, (**it).d);
     glPopMatrix();
   }
 
@@ -253,7 +362,7 @@ int main(int argc, char** argv) {
   SDL_Surface* screen = SDL_SetVideoMode(width, height, 32,
                                          SDL_HWSURFACE|SDL_OPENGLBLIT);
   if(!screen) {
-    printf("Unable to set 640x480 video: %s\n", SDL_GetError());
+    printf("Unable to set %d x %d video: %s\n", width, height, SDL_GetError());
     return 1;
   }
 
@@ -270,15 +379,21 @@ int main(int argc, char** argv) {
   btBroadphaseInterface* broadphase = new btDbvtBroadphase();
 
   // Set up the collision configuration and dispatcher
-  btDefaultCollisionConfiguration* collisionConfiguration = new btDefaultCollisionConfiguration();
+  btCollisionConfiguration * collisionConfiguration = new btSoftBodyRigidBodyCollisionConfiguration();
   btCollisionDispatcher* dispatcher = new btCollisionDispatcher(collisionConfiguration);
+
 
   // The actual physics solver
   btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver;
 
   // The world.
-  btDiscreteDynamicsWorld* dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher,broadphase,solver,collisionConfiguration);
+
+  btSoftRigidDynamicsWorld * dynamicsWorld = new btSoftRigidDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+  btSoftBodyWorldInfo & softWorldInfo = dynamicsWorld->getWorldInfo();
+  softWorldInfo.m_gravity.setValue(0, -10, 0);
+  softWorldInfo.m_sparsesdf.Initialize();
   dynamicsWorld->setGravity(btVector3(0,-10,0));
+
 
 	float planes[] = {
 		0, 1, 0, 0,
@@ -287,20 +402,18 @@ int main(int argc, char** argv) {
 		0, 0, 1, 50,
 		0, 0, -1, 50
 	};
-	for (int i=0; i < 1; ++i) {
+    for (int i=0; i < 1; ++i) {
 		// FIXME: törmäystasot planes[1..4] toimivat "väärinpäin"
 		const float* plane = &planes[i*4];
-  	btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(plane[0], plane[1], plane[2]), plane[3]);
-  	btDefaultMotionState* groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(0,0,0)));
-		btRigidBody::btRigidBodyConstructionInfo
-			groundRigidBodyCI(0,groundMotionState,groundShape,btVector3(0,0,0));
-		btRigidBody* groundRigidBody = new btRigidBody(groundRigidBodyCI);
+        btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(plane[0], plane[1], plane[2]), plane[3]);
+        btVector3 inertia(0,0,0);
+        btRigidBody * groundRigidBody = new btRigidBody(0, 0, groundShape, inertia);
 		dynamicsWorld->addRigidBody(groundRigidBody);
 	}
   btCollisionShape* fallShape = new btSphereShape(1);
 
   btDefaultMotionState* fallMotionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(3,25,3)));
-  btScalar mass = 5000;
+  btScalar mass = 500;
   btVector3 fallInertia(0,0,0);
   fallShape->calculateLocalInertia(mass,fallInertia);
   btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass,fallMotionState,fallShape,fallInertia);
@@ -317,7 +430,7 @@ int main(int argc, char** argv) {
   Uint32 old_ticks = 0;
   Uint32 ticks;
   SDL_WM_GrabInput(SDL_GRAB_ON);
-  SDL_ShowCursor(SDL_DISABLE);
+//  SDL_ShowCursor(SDL_DISABLE);
 
   btVector3 eye(-CITY_W/2, 0.4, -CITY_W*CITY_W*.25f);
   double theta = 0.0;
@@ -325,11 +438,14 @@ int main(int argc, char** argv) {
 
   int forward = 0;
   int sideways = 0;
+  int up = 0;
   while(!done) {
     SDL_WarpMouse(width/2, height/2);
     ticks = SDL_GetTicks();
     float t = (ticks - old_ticks)/1000.0f;
     bool fire = false;
+
+    softWorldInfo.m_sparsesdf.GarbageCollect();
 
     SDL_Event event;
     while(SDL_PollEvent(&event)) {
@@ -361,6 +477,12 @@ int main(int argc, char** argv) {
           case SDLK_d:
             sideways = 1;
             break;
+          case SDLK_r:
+            up = 1;
+            break;
+          case SDLK_f:
+            up = -1;
+            break;
           }
           break;
         }
@@ -378,6 +500,11 @@ int main(int argc, char** argv) {
         case SDLK_d:
           if (sideways == 1) sideways = 0;
           break;
+        case SDLK_r:
+          if (up == 1) up = 0;
+          break;
+        case SDLK_f:
+          if (up == -1) up = 0;
         }
         break;
 								case SDL_MOUSEBUTTONDOWN:
@@ -402,7 +529,7 @@ int main(int argc, char** argv) {
     const float move_per_sec = 5.0f;
     btVector3 mover(lookDir.x(), 0, lookDir.z());
     mover.normalize();
-    btVector3 tmp((forward * mover) + (sideways * mover.rotate(btVector3(0, 1, 0), -M_PI_2)));
+    btVector3 tmp((up * btVector3(0, 1, 0))+(forward * mover) + (sideways * mover.rotate(btVector3(0, 1, 0), -M_PI_2)));
     if (tmp.length() > 1)
       tmp.normalize();
     eye += move_per_sec * t * tmp;
@@ -415,7 +542,7 @@ int main(int argc, char** argv) {
               eye.z() + lookDir.z(),
               0, 1, 0);
 
-    dynamicsWorld->stepSimulation(t,5);
+    dynamicsWorld->stepSimulation(t,1);
 
     btTransform trans;
     fallRigidBody->getMotionState()->getWorldTransform(trans);
@@ -425,15 +552,19 @@ int main(int argc, char** argv) {
     Draw(screen);
 
     if (fire) {
-      Block * block = new Block(*dynamicsWorld,
-                                eye.x(),
-                                eye.y(),
-                                eye.z(),
-                                0.3f, 0.3f, 0.3f,
-                                50.0f
-                                );
-      block->body->applyCentralImpulse(1000.0f*lookDir);
-      projectiles.push_back(block);
+      Projectile * projectile = new Projectile(dynamicsWorld, eye, lookDir, 20.0f, 50.0f);
+
+      if (projectiles.size() >= 5) {
+        Projectile * p = projectiles.front();
+        dynamicsWorld->removeSoftBody(p->body);
+        delete p->body;
+        delete p;
+        projectiles.erase(projectiles.begin());
+        projectiles.push_back(projectile);
+      } else {
+        projectiles.push_back(projectile);
+      }
+
     }
     SDL_GL_SwapBuffers();
     old_ticks = ticks;
@@ -461,7 +592,6 @@ int main(int argc, char** argv) {
   delete collisionConfiguration;
   delete dispatcher;
   delete broadphase;
-
 
 
   printf("Exited cleanly\n");

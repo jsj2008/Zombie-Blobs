@@ -100,7 +100,7 @@ void City::Generate(void) {
     for(int i = 0; i < CITY_W; i++) {
         for(int j = 0; j < CITY_H; j++) {
             for(int h = 0; h < getHeight(i,j); h++) {
-                blocks.push_back( new Block(world, i, h, j, 1.0f, 1.0f, 1.0f) );
+                blocks.push_back( new Block(world, i, h, j, 1, 1, 1) );
             }
         }
     }
