@@ -1,9 +1,14 @@
 #include "City.hpp"
 
 #include <cstdlib>
+#include <map>
 
 City::City( btDiscreteDynamicsWorld &dynamicsWorld ) : world(dynamicsWorld) {
     Generate();
+}
+
+int ckey(int i, int j, int h) {
+  return CITY_W*CITY_H*h + CITY_W * j + i;
 }
 
 /**
@@ -96,31 +101,61 @@ void City::Generate(void) {
         }
     }
 
+    std::map<int, Block*> cache;
+
     // Make bloxxx out of the height data!
     for(int i = 0; i < CITY_W; i++) {
-        for(int j = 0; j < CITY_H; j++) {
-            for(int h = 0; h < getHeight(i,j); h++) {
-                blocks.push_back( new Block(world, i, h, j, 1, 1, 1) );
-                if (h == 0) {
-                  btPoint2PointConstraint * c = new btPoint2PointConstraint(
-                        *blocks.back()->body, btVector3(0, -0.5, 0));
-                  blocks.back()->body->addConstraintRef(c);
-                  world.addConstraint(c, false);
-                } else if (h > 0) {
-                  Block *top = *(blocks.end() - 2), *bottom = blocks.back();
-                  btQuaternion a;
-                  a.setRotation(btVector3(0, 0, 1), 3.14159265358979/2);
-                  btSliderConstraint * c = new btSliderConstraint(
-                        *top->body, *bottom->body,
-                        btTransform(a, btVector3(0, 0, 0)),
-                        btTransform(a, btVector3(0, 0, 0)), true);
-                  c->setLowerLinLimit(1);
-                  c->setUpperLinLimit(1);
-                  top->body->addConstraintRef(c);
-                  world.addConstraint(c, false);
-                }
-            }
+      for(int j = 0; j < CITY_H; j++) {
+        for(int h = 0; h < getHeight(i,j); h++) {
+          Block * block = new Block(world, i, h, j, 1, 1, 1);
+          cache[ckey(i, j, h)] = block;
+          blocks.push_back(block);
+          if (h == 0) {
+            btPoint2PointConstraint * c = new btPoint2PointConstraint(
+                  *block->body, btVector3(0, -0.5, 0));
+            block->body->addConstraintRef(c);
+            world.addConstraint(c, false);
+          } else if (h > 0) {
+            Block *bottom = *(blocks.end() - 2);
+            btQuaternion a;
+            a.setRotation(btVector3(0, 0, 1), 3.14159265358979/2);
+            btSliderConstraint * c = new btSliderConstraint(
+                  *bottom->body, *block->body,
+                  btTransform(a, btVector3(0, 0, 0)),
+                  btTransform(a, btVector3(0, 0, 0)), true);
+            c->setLowerLinLimit(1);
+            c->setUpperLinLimit(1);
+            block->body->addConstraintRef(c);
+            world.addConstraint(c, true);
+          }
+
+          Block* left = cache[ckey(i-1, j, h)];
+          Block* back = cache[ckey(i, j-1, h)];
+          if(left) {
+            btQuaternion a(0, 0, 0, 1);
+            btSliderConstraint * c = new btSliderConstraint(
+                  *left->body, *block->body,
+                  btTransform::getIdentity(), btTransform::getIdentity(),
+                  true);
+            c->setLowerLinLimit(1);
+            c->setUpperLinLimit(1);
+            block->body->addConstraintRef(c);
+            world.addConstraint(c, true);
+          }
+          if(back) {
+            btQuaternion a;
+            a.setRotation(btVector3(0, 1, 0), 3.14159265358979/2);
+            btSliderConstraint * c = new btSliderConstraint(
+                  *block->body, *back->body,
+                  btTransform(a, btVector3(0, 0, 0)),
+                  btTransform(a, btVector3(0, 0, 0)), true);
+            c->setLowerLinLimit(1);
+            c->setUpperLinLimit(1);
+            block->body->addConstraintRef(c);
+            world.addConstraint(c, true);
+          }
         }
+      }
     }
 
 }

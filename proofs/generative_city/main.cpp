@@ -727,11 +727,14 @@ int main(int argc, char** argv) {
         btTypedConstraint* c = body->getConstraintRef(j);
         if (!destroyed) {
           btScalar impulse = c->getAppliedImpulse();
-          destroyed = impulse*impulse > 1e7;
+          // see bug report on bullet: http://code.google.com/p/bullet/issues/detail?id=301#c7
+          c->internalSetAppliedImpulse(0);
+          destroyed = impulse*impulse > 7e4;
         }
         if (destroyed) {
           body->removeConstraintRef(c);
           dynamicsWorld->removeConstraint(c);
+          --j, --count;
         }
       }
     }
@@ -746,7 +749,7 @@ int main(int argc, char** argv) {
     if (fire) {
       Projectile * projectile = new Projectile(dynamicsWorld, eye, lookDir, 20.0f, 500.0f);
 
-      if (projectiles.size() >= 5) {
+      if (projectiles.size() >= 25) {
         Projectile * p = projectiles.front();
         dynamicsWorld->removeRigidBody(p->body2);
         //dynamicsWorld->removeSoftBody(p->body);
