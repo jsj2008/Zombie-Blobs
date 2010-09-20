@@ -6,8 +6,8 @@
 
 #include "Block.hpp"
 
-#define CITY_W 10
-#define CITY_H 7
+#define CITY_W 15
+#define CITY_H 15
 
 class City {
 

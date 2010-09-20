@@ -17,6 +17,10 @@
 #include <BulletSoftBody/btSoftBody.h>
 #include <BulletSoftBody/btSoftBodyHelpers.h>
 #include <BulletSoftBody/btSoftBodyRigidBodyCollisionConfiguration.h>
+#include <BulletCollision/CollisionDispatch/btGhostObject.h>
+
+#include <iostream>
+#include <typeinfo>
 
 #define HCpPI 57.295779513082320876798154814105
 
@@ -170,11 +174,14 @@ void unitSphere(int slices) {
 
 
 struct Projectile {
-    btSoftBody * body;
+    //btSoftBody * body;
+    btRigidBody * body2;
+    float kaboom;
+    btVector3 point;
 
     Projectile(btSoftRigidDynamicsWorld * world, btVector3 pos, btVector3 dir, btScalar mass, btScalar impulse)
-      : body(0) {
-
+      : body2(0), kaboom(-1.0f), point(0, 0, 0) {
+/*
       body = projectile(world, 150);
       //body->setMass(0, 0.0f);
       body->m_cfg.piterations = 2;
@@ -201,7 +208,36 @@ struct Projectile {
       //body->getCollisionShape()->setMargin(0.1f);
 
       body->getCollisionShape()->setMargin(0.1);
+
+      ghost = new btPairCachingGhostObject;
+      ghost->setWorldTransform(body->getWorldTransform());
+      ghost->setInterpolationLinearVelocity(body->getInterpolationLinearVelocity());
+      ghost->setCollisionShape(new btSphereShape(0.5));
+      //ghost->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE);
+      //world->addCollisionObject(ghost);
       world->addSoftBody(body);
+*/
+
+      btMatrix3x3 m;
+      // orientaatiolla ei sinänsä väliä jos objektina on pallo,
+      // pistetään kuitenkin
+      m.setEulerZYX(dir.x(), dir.y(), dir.z());
+
+      btDefaultMotionState* ms = new btDefaultMotionState(btTransform(m, pos));
+      btRigidBody::btRigidBodyConstructionInfo fallRigidBodyCI(mass, ms, new btSphereShape(0.5f));
+      body2 = new btRigidBody(fallRigidBodyCI);
+      body2->applyCentralImpulse(dir * impulse);
+      body2->applyCentralForce(btVector3(0, 1, 0) * impulse/4.0f);
+      world->addRigidBody(body2);
+    }
+
+    void update() {
+/*      ghost->setWorldTransform(body->getWorldTransform());
+      //ghost->setInterpolationLinearVelocity(body->getInterpolationLinearVelocity());
+      btBroadphasePairArray& pairArray = ghost->getOverlappingPairCache()->getOverlappingPairArray();
+      int numPairs = pairArray.size();
+*/
+      //std::cout << numPairs << std::endl;
     }
 
     btSoftBody * projectile(btSoftRigidDynamicsWorld * world, int resolution) {
@@ -289,11 +325,11 @@ void Draw3D(SDL_Surface *S) {
   for (ProjectileList::iterator it = projectiles.begin(); it != projectiles.end(); ++it) {
     glPushMatrix();
 
-    btTransform & trans = (**it).body->getWorldTransform();
+    btTransform & trans = (**it).body2->getWorldTransform();
     btScalar m[16];
     trans.getOpenGLMatrix(m);
     glMultMatrixf(m);
-
+#if 0
     btSoftBody* softbody = (**it).body;
     /* Each soft body contain an array of vertices (nodes/particles_mass)   */
     btSoftBody::tNodeArray& nodes(softbody->m_nodes);
@@ -318,11 +354,13 @@ void Draw3D(SDL_Surface *S) {
       glVertex3fv(faces[j].m_n[1]->m_x);
     }
     glEnd();
+#endif
     //glEnable(GL_LIGHTING);
-    /*
+
+    glColor3f(0.8, 0.4, 0.4);
 		glScalef(0.5f, 0.5f, 0.5f);
 		unitSphere(10);
-        */
+
     //DrawBox((**it).w, (**it).h, (**it).d);
     glPopMatrix();
   }
@@ -347,6 +385,29 @@ void Draw(SDL_Surface *Screen) {
   Draw2D(Screen);
 }
 
+struct ExplosionCb : public btBroadphaseAabbCallback
+{
+  ExplosionCb(btRigidBody * b, const btVector3 & v, float d, float s) : obody(b), center(v), distance(d), step(s) {}
+  const btRigidBody * obody;
+  const btVector3 center;
+  const float distance, step;
+  virtual ~ExplosionCb() {}
+  bool process(const btBroadphaseProxy* proxy) {
+    btRigidBody * body = static_cast<btRigidBody*>(proxy->m_clientObject);
+    if(body == obody)
+      return true;
+    btVector3 d = body->getCenterOfMassPosition() - center;
+    float tmp = d.length();
+    if(tmp > distance) return true;
+
+    d /= tmp;
+    tmp = (distance - tmp) / distance;
+    //body->applyCentralForce(d * (tmp * tmp * 10000.0f * (step - 0.3f)));
+    body->applyCentralForce(d * (tmp * tmp * 3000.0f * (step > 0.4f ? 1.0f : -1.0f)));
+    return true;
+  }
+};
+
 int main(int argc, char** argv) {
 
   if(SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -367,7 +428,7 @@ int main(int argc, char** argv) {
   }
 
   // seed rand (should be done better but this will do for now)
-  srand(SDL_GetTicks());
+  srand(argc == 2 ? atoi(argv[0]) : SDL_GetTicks());
 
   InitGL(screen);
 
@@ -395,21 +456,19 @@ int main(int argc, char** argv) {
   dynamicsWorld->setGravity(btVector3(0,-10,0));
 
 
-	float planes[] = {
-		0, 1, 0, 0,
-		1, 0, 0, 50,
-		-1, 0, 0, 50,
-		0, 0, 1, 50,
-		0, 0, -1, 50
-	};
-    for (int i=0; i < 1; ++i) {
-		// FIXME: törmäystasot planes[1..4] toimivat "väärinpäin"
-		const float* plane = &planes[i*4];
-        btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(plane[0], plane[1], plane[2]), plane[3]);
-        btVector3 inertia(0,0,0);
-        btRigidBody * groundRigidBody = new btRigidBody(0, 0, groundShape, inertia);
-		dynamicsWorld->addRigidBody(groundRigidBody);
-	}
+  btVector3 planeCenters[] = {{0,0,0},{-50,0,0},{0,0,50},{50,0,0},{0,0,-50}};
+  btMatrix3x3 planeRotations[] = {
+    {1,0,0, 0,1,0, 0,0,1},
+    {0,1,0, 0,0,1, 1,0,0},
+    {1,0,0, 0,0,1, 0,-1,0},
+    {0,-1,0, 0,0,1, -1,0,0},
+    {-1,0,0, 0,0,1, 0,1,0}};
+  btCollisionShape* edge = new btStaticPlaneShape(btVector3(0, 1, 0), 0);
+  for (int i=0; i < 5; ++i) {
+    btDefaultMotionState * ms = new btDefaultMotionState(btTransform(planeRotations[i], planeCenters[i]));
+    btRigidBody * edgeRigidBody = new btRigidBody(0, ms, edge);
+    dynamicsWorld->addRigidBody(edgeRigidBody);
+  }
   btCollisionShape* fallShape = new btSphereShape(1);
 
   btDefaultMotionState* fallMotionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1),btVector3(3,25,3)));
@@ -526,10 +585,12 @@ int main(int argc, char** argv) {
     btVector3 lookDir(0, 0, 1);
     lookDir = lookDir.rotate(btVector3(1, 0, 0), phi).rotate(btVector3(0, 1, 0), theta).normalize();
 
-    const float move_per_sec = 5.0f;
-    btVector3 mover(lookDir.x(), 0, lookDir.z());
-    mover.normalize();
-    btVector3 tmp((up * btVector3(0, 1, 0))+(forward * mover) + (sideways * mover.rotate(btVector3(0, 1, 0), -M_PI_2)));
+    const float move_per_sec = 25.0f;
+    btVector3 mover_forward(lookDir);
+    btVector3 mover_sideways(-lookDir.z(), 0, lookDir.x());
+    mover_forward.normalize();
+    mover_sideways.normalize();
+    btVector3 tmp((up * btVector3(0, 1, 0))+(forward * mover_forward) + (sideways * mover_sideways));
     if (tmp.length() > 1)
       tmp.normalize();
     eye += move_per_sec * t * tmp;
@@ -542,7 +603,73 @@ int main(int argc, char** argv) {
               eye.z() + lookDir.z(),
               0, 1, 0);
 
+    static float t2;
+    t2 = 0.0f;
+
+    struct foo {
+      static void cb(btDynamicsWorld *, btScalar timeStep) {
+        t2 = timeStep;
+      }
+    };
+
+    dynamicsWorld->setInternalTickCallback(&foo::cb);
     dynamicsWorld->stepSimulation(t,1);
+
+    t = t2;
+
+    /*for (ProjectileList::iterator it = projectiles.begin(); it != projectiles.end(); ++it) {
+      (*it)->update();
+    }*/
+
+    int numManifolds = dynamicsWorld->getDispatcher()->getNumManifolds();
+    for (int i=0;i<numManifolds;i++)
+    {
+      btPersistentManifold* contactManifold = dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
+      btCollisionObject* obA = static_cast<btCollisionObject*>(contactManifold->getBody0());
+      btCollisionObject* obB = static_cast<btCollisionObject*>(contactManifold->getBody1());
+
+      ProjectileList::iterator p = projectiles.end();
+
+      for (ProjectileList::iterator it = projectiles.begin(); it != projectiles.end(); ++it) {
+        if ((*it)->kaboom >= 0) continue;
+        if (static_cast<btCollisionObject*>((*it)->body2) == obA || static_cast<btCollisionObject*>((*it)->body2) == obB) {
+          p = it;
+          break;
+        }
+      }
+
+      if (p == projectiles.end())
+        continue;
+
+      int numContacts = contactManifold->getNumContacts();
+      for (int j=0;j<numContacts;j++)
+      {
+        btManifoldPoint& pt = contactManifold->getContactPoint(j);
+        if (pt.getDistance()<0.f)
+        {
+          //const btVector3& point = pt.getPositionWorldOnB();
+          (*p)->kaboom = 0.0f;
+          (*p)->point = (*p)->body2->getCenterOfMassPosition();
+          dynamicsWorld->removeRigidBody((*p)->body2);
+          break;
+        }
+      }
+    }
+
+    for (int i = 0; i < projectiles.size(); ++i) {
+      Projectile * p = projectiles[i];
+      if (p->kaboom < 0) continue;
+      btVector3 point = p->point;
+      ExplosionCb explosionCb(p->body2, point, 10, p->kaboom > 1.0f ? 1.0f : p->kaboom);
+      broadphase->aabbTest(point - btVector3(10, 10, 10), point + btVector3(10, 10, 10), explosionCb);
+      if (p->kaboom >= 1.0f) {
+        projectiles.erase(projectiles.begin() + i);
+        delete p;
+        --i;
+      } else {
+        p->kaboom += 5.0f * t;
+      }
+    }
 
     btTransform trans;
     fallRigidBody->getMotionState()->getWorldTransform(trans);
@@ -552,12 +679,13 @@ int main(int argc, char** argv) {
     Draw(screen);
 
     if (fire) {
-      Projectile * projectile = new Projectile(dynamicsWorld, eye, lookDir, 20.0f, 50.0f);
+      Projectile * projectile = new Projectile(dynamicsWorld, eye, lookDir, 20.0f, 500.0f);
 
       if (projectiles.size() >= 5) {
         Projectile * p = projectiles.front();
-        dynamicsWorld->removeSoftBody(p->body);
-        delete p->body;
+        dynamicsWorld->removeRigidBody(p->body2);
+        //dynamicsWorld->removeSoftBody(p->body);
+        delete p->body2;
         delete p;
         projectiles.erase(projectiles.begin());
         projectiles.push_back(projectile);
