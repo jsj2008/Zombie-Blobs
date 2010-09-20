@@ -62,11 +62,47 @@ bool InitGL(SDL_Surface *S)
   glEnable(GL_CULL_FACE);
   glCullFace(GL_FRONT);
 
+  return true;
+}
+
+void applyLights() {
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
+  glEnable(GL_LIGHT1);
   glEnable(GL_COLOR_MATERIAL);
 
-  return true;
+  float globalAmbient[4] = { 0.4, 0.4, 0.5, 1 };
+
+  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globalAmbient);
+
+  // Set up a light.
+  GLfloat light_d[] = {1, 1, 1, 1.0f};
+  GLfloat light_s[] = {0.1f, 0.1f, 0.1f, 1};
+  GLfloat light_pos[4] = {5, 30, 40, 1};
+  GLfloat light_pos2[4] = {-45, -30, -60, 1};
+
+  glLightfv(GL_LIGHT0, GL_DIFFUSE, light_d);
+  glLightfv(GL_LIGHT0, GL_SPECULAR, light_s);
+  glLightfv(GL_LIGHT1, GL_DIFFUSE, light_d);
+  glLightfv(GL_LIGHT1, GL_SPECULAR, light_s);
+
+  glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+  glLightfv(GL_LIGHT1, GL_POSITION, light_pos2);
+  glEnable(GL_LIGHT0);
+  glEnable(GL_LIGHT1);
+
+  float emission[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+  float ambient[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+  float diffuse[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+  float specular[4] = { 0.8f, 0.6f, 0.6f, 1.0f };
+
+  glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emission);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular);
+  glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 5.0f);
+
+  glEnable(GL_NORMALIZE);
 }
 
 void Draw2D(SDL_Surface *S) {
@@ -287,6 +323,8 @@ void Draw3D(SDL_Surface *S) {
   //    glRotatef(25,1,0,0);
   //glRotatef(45,0,1,0);
 
+  applyLights();
+
   glPushMatrix();
   glColor3f(1,0,0);
   glTranslatef(sphere_x,sphere_y,sphere_z);
@@ -308,15 +346,18 @@ void Draw3D(SDL_Surface *S) {
   // Draw the city
 
   btTransform trans;
+  unsigned int c = 24325243;
   for (unsigned int i=0; i<city->blocks.size(); i++) {
     glPushMatrix();
-
     city->blocks[i]->body->getMotionState()->getWorldTransform(trans);
     btScalar m[16];
     trans.getOpenGLMatrix(m);
     glMultMatrixf(m);
 
-    glColor3f(0.2f+city->blocks[i]->h*0.02f, 0.2f, 0.2f);
+    c = 1103515245u * c + 12345u;
+
+    float color = ((c >> 8) & 0xFF) / 255.0f;
+    glColor3f(0.2f + color*0.3f, 0.2f + color*0.3f, 0.3f + color*0.3f);
 
     DrawBox(city->blocks[i]->w,city->blocks[i]->h,city->blocks[i]->d);
     glPopMatrix();
@@ -491,8 +532,8 @@ int main(int argc, char** argv) {
   SDL_WM_GrabInput(SDL_GRAB_ON);
 //  SDL_ShowCursor(SDL_DISABLE);
 
-  btVector3 eye(-CITY_W/2, 0.4, -CITY_W*CITY_W*.25f);
-  double theta = 0.0;
+  btVector3 eye(-CITY_W/2, 5.4, -CITY_H);
+  double theta = 3.14/4.0;
 	double phi = 0.0;
 
   int forward = 0;
@@ -668,6 +709,30 @@ int main(int argc, char** argv) {
         --i;
       } else {
         p->kaboom += 5.0f * t;
+      }
+    }
+
+    int lastx = -1, lastz = -1;
+    bool destroyed = false;
+    for (int i = 0; i < city->blocks.size(); ++i) {
+      Block & b = *city->blocks[i];
+      if (b.x != lastx || b.z != lastz) {
+        lastx = b.x;
+        lastz = b.z;
+        destroyed = false;
+      }
+      btRigidBody* body = b.body;
+      int count = body->getNumConstraintRefs();
+      for (int j = 0; j < count; ++j) {
+        btTypedConstraint* c = body->getConstraintRef(j);
+        if (!destroyed) {
+          btScalar impulse = c->getAppliedImpulse();
+          destroyed = impulse*impulse > 1e7;
+        }
+        if (destroyed) {
+          body->removeConstraintRef(c);
+          dynamicsWorld->removeConstraint(c);
+        }
       }
     }
 

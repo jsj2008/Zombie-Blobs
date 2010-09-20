@@ -7,9 +7,10 @@
 class Block {
 
 public:
-    Block(btDiscreteDynamicsWorld &dynamicsWorld, float x, float y, float z, float width, float height, float depth);
+    Block(btDiscreteDynamicsWorld &dynamicsWorld, int i, int h, int j, float width, float height, float depth);
     btRigidBody* body;
     float w, h, d;
+    int x, y, z;
 
 private:
     btDiscreteDynamicsWorld &world;

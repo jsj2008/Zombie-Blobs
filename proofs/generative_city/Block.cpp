@@ -1,10 +1,11 @@
 #include "Block.hpp"
 
-Block::Block(btDiscreteDynamicsWorld &dynamicsWorld, float x, float y, float z, float width, float height, float depth) :
+Block::Block(btDiscreteDynamicsWorld &dynamicsWorld, int i, int h, int j, float width, float height, float depth) :
     world(dynamicsWorld),
     w(width),
     h(height),
-    d(depth) {
+    d(depth),
+    x(i), y(h), z(j) {
 
     btVector3 fallInertia(0,0,0);
     float mass = 10.0f * width*height*depth;

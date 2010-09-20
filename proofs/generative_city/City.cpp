@@ -101,6 +101,24 @@ void City::Generate(void) {
         for(int j = 0; j < CITY_H; j++) {
             for(int h = 0; h < getHeight(i,j); h++) {
                 blocks.push_back( new Block(world, i, h, j, 1, 1, 1) );
+                if (h == 0) {
+                  btPoint2PointConstraint * c = new btPoint2PointConstraint(
+                        *blocks.back()->body, btVector3(0, -0.5, 0));
+                  blocks.back()->body->addConstraintRef(c);
+                  world.addConstraint(c, false);
+                } else if (h > 0) {
+                  Block *top = *(blocks.end() - 2), *bottom = blocks.back();
+                  btQuaternion a;
+                  a.setRotation(btVector3(0, 0, 1), 3.14159265358979/2);
+                  btSliderConstraint * c = new btSliderConstraint(
+                        *top->body, *bottom->body,
+                        btTransform(a, btVector3(0, 0, 0)),
+                        btTransform(a, btVector3(0, 0, 0)), true);
+                  c->setLowerLinLimit(1);
+                  c->setUpperLinLimit(1);
+                  top->body->addConstraintRef(c);
+                  world.addConstraint(c, false);
+                }
             }
         }
     }
