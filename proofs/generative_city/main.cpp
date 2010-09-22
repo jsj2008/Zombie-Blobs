@@ -2,9 +2,14 @@
 #include <cassert>
 
 #ifdef __APPLE__
-#include <SDL/SDL.h>
+	#include <SDL/SDL.h>
 #else
-#include <SDL.h>
+	#include <SDL.h>
+#endif
+
+#ifdef WIN32 || WIN64
+	#define NOMINMAX
+	#include <windows.h>
 #endif
 
 #include <GL/gl.h>
@@ -22,7 +27,13 @@
 #include <iostream>
 #include <typeinfo>
 
-#define HCpPI 57.295779513082320876798154814105
+#ifndef M_PI
+	#define M_PI 3.14159265358979323846
+	#define M_PI 3.14159265358979323846 /* pi */
+#endif
+#ifndef M_PI_2
+	#define M_PI_2 1.57079632679489661923 /* pi/2 */
+#endif
 
 City *city;
 
@@ -215,7 +226,7 @@ struct Projectile {
     float kaboom;
     btVector3 point;
 
-    Projectile(btSoftRigidDynamicsWorld * world, btVector3 pos, btVector3 dir, btScalar mass, btScalar impulse)
+    Projectile(btSoftRigidDynamicsWorld * world, const btVector3& pos, const btVector3& dir, btScalar mass, btScalar impulse)
       : body2(0), kaboom(-1.0f), point(0, 0, 0) {
 /*
       body = projectile(world, 150);
@@ -475,6 +486,7 @@ int main(int argc, char** argv) {
 
   ReshapeGL(screen->w, screen->h);
 
+  SDL_ShowCursor(SDL_DISABLE);
 
   // INIT BULLET
   // Build the broadphase
@@ -497,13 +509,13 @@ int main(int argc, char** argv) {
   dynamicsWorld->setGravity(btVector3(0,-10,0));
 
 
-  btVector3 planeCenters[] = {{0,0,0},{-50,0,0},{0,0,50},{50,0,0},{0,0,-50}};
+  btVector3 planeCenters[] = {btVector3(0,0,0),btVector3(-50,0,0),btVector3(0,0,50),btVector3(50,0,0),btVector3(0,0,-50)};
   btMatrix3x3 planeRotations[] = {
-    {1,0,0, 0,1,0, 0,0,1},
-    {0,1,0, 0,0,1, 1,0,0},
-    {1,0,0, 0,0,1, 0,-1,0},
-    {0,-1,0, 0,0,1, -1,0,0},
-    {-1,0,0, 0,0,1, 0,1,0}};
+	btMatrix3x3(1,0,0, 0,1,0, 0,0,1),
+    btMatrix3x3(0,1,0, 0,0,1, 1,0,0),
+    btMatrix3x3(1,0,0, 0,0,1, 0,-1,0),
+    btMatrix3x3(0,-1,0, 0,0,1, -1,0,0),
+    btMatrix3x3(-1,0,0, 0,0,1, 0,1,0)};
   btCollisionShape* edge = new btStaticPlaneShape(btVector3(0, 1, 0), 0);
   for (int i=0; i < 5; ++i) {
     btDefaultMotionState * ms = new btDefaultMotionState(btTransform(planeRotations[i], planeCenters[i]));
