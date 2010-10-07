@@ -1,0 +1,13 @@
+*.gch
+*.o
+*~
+*~
+.*swp
+Makefile
+Makefile.Debug
+Makefile.Release
+Zombie-Blobs
+Zombie-Blobs.pro.user
+debug/
+release/
+vc90.pdb
