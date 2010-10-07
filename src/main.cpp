@@ -3,7 +3,7 @@
 #include "game.hpp"
 #include "opengl.hpp"
 
-#include <SDL/SDL.h>
+#include <SDL.h>
 #include <cstdlib>
 
 #include <string>
@@ -28,10 +28,13 @@ int main(int argc, char* argv[]) {
 
   SDL_WM_SetCaption("Zombie-Blobs", "Zombie-Blobs");
 
+  bool fs = settings.get("full screen", false);
+
+  int flags = fs ? SDL_FULLSCREEN : SDL_RESIZABLE;
   SDL_Surface* surface;
   SDL_Check(!(surface = SDL_SetVideoMode(settings.get("width", 800),
                                          settings.get("height", 600),
-                                         0, SDL_OPENGL | SDL_RESIZABLE)));
+                                         0, SDL_OPENGL | flags)));
 
   GLenum err = glewInit();
   if (err != GLEW_OK) {
@@ -40,6 +43,10 @@ int main(int argc, char* argv[]) {
   }
 
   Log::info("Using GLEW %s", glewGetString(GLEW_VERSION));
+
+  if (fs)
+    SDL_WM_GrabInput(SDL_GRAB_ON);
+  SDL_ShowCursor(false);
 
   Game game;
   int ret = game.run();

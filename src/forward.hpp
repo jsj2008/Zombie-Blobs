@@ -10,6 +10,7 @@ class Light;
 class Material;
 class Model;
 class OpenGL;
+class Overlay;
 class Player;
 class Renderer;
 class ResourceManager;

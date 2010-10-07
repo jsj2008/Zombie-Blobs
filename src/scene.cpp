@@ -2,3 +2,6 @@
 
 Scene::Scene() {
 }
+
+void Scene::update(float dt) {
+}

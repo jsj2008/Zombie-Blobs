@@ -5,6 +5,9 @@
 class Camera {
 public:
   Camera();
+  void resize(int width, int height);
+
+  int m_width, m_height;
 };
 
 #endif // CAMERA_HPP

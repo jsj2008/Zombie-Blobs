@@ -18,7 +18,8 @@ SOURCES += \
     utils.cpp \
     camera.cpp \
     settings.cpp \
-    glew/src/glew.c
+    glew/src/glew.c \
+    overlay.cpp
 
 HEADERS += \
     game.hpp \
@@ -38,7 +39,8 @@ HEADERS += \
     camera.hpp \
     settings.hpp \
     forward.hpp \
-    glew/include/GL/glew.h
+    glew/include/GL/glew.h \
+    overlay.hpp
 
 CONFIG += link_pkgconfig
 PKGCONFIG += sdl

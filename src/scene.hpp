@@ -12,6 +12,8 @@
 class Scene {
 public:
   Scene();
+
+  void update(float dt);
 };
 
 #endif // SCENE_HPP

@@ -1,31 +1,47 @@
 #ifndef GAME_HPP
 #define GAME_HPP
 
-// Game engine main class
+#include "forward.hpp"
+#include "overlay.hpp"
+#include "player.hpp"
+
+#include <list>
+
+#include <SDL.h>
+
+/// Game engine main class
 class Game {
 public:
+  enum GameState { MENU = 1 << 0,
+                   GAME = 1 << 1 };
+
   Game();
-  int run() { return 0; }
-  /*mainloop {
-    handleInput();
+  /// The main loop
+  int run();
 
-    if the current state includes normal game state {
-      physicsUpdate(dt);
-      for each entity, light, animator etc:
-        .update(dt)
-      scene.render();
-      overlay.render();
-    }
+  static float gametime, dt;
 
-    if some kind of menu is visible {
-      // GUI could be some kind of IMGUI-like, no update() or widgets etc
-      menu.render();
-    }
+private:
+  typedef std::list<Camera*> Cameras;
 
-    swap();
-  }
-  enum GameState { MENU, GAME } state;
-  Level* level;*/
+  Scene* m_scene;
+  Level* m_level;
+  Overlay m_overlay;
+
+  Player m_player;
+
+  int m_game_state;
+  bool m_running;
+
+  Cameras m_cameras;
+
+  void handleEvents();
+  void updatePhysics(float dt);
+
+  void keyDown(SDLKey key);
+  void keyUp(SDLKey key);
+  void buttonDown(Uint8 btn, Uint16 x, Uint16 y);
+  void buttonUp(Uint8 btn, Uint16 x, Uint16 y);
 };
 
 #endif // GAME_HPP
