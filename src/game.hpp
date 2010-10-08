@@ -4,6 +4,7 @@
 #include "forward.hpp"
 #include "overlay.hpp"
 #include "player.hpp"
+#include "input_handler.hpp"
 
 #include <list>
 
@@ -35,8 +36,11 @@ private:
 
   Cameras m_cameras;
 
+  InputHandler m_input;
+
   void handleEvents();
   void updatePhysics(float dt);
+  void handleInput();
 
   void keyDown(SDLKey key);
   void keyUp(SDLKey key);

@@ -2,6 +2,7 @@
 #include "settings.hpp"
 #include "renderer.hpp"
 #include "scene.hpp"
+#include "input_handler.hpp"
 
 #include <cmath>
 
@@ -11,6 +12,8 @@ float Game::dt = 0.0f;
 Game::Game() : m_scene(0), m_level(0),
     m_game_state(GAME), m_running(true) {
   m_cameras.push_back(&m_player);
+
+  InputHandler::setKey(SDLK_ESCAPE, "quit");
 }
 
 int Game::run() {
@@ -27,6 +30,7 @@ int Game::run() {
     dt = delta_ticks / 1000.0f;
 
     handleEvents();
+    handleInput();
 
     if ((m_game_state & GAME) && m_scene) {
       updatePhysics(dt);
@@ -46,7 +50,7 @@ int Game::run() {
     previous_ticks += delta_ticks;
 
     // Limit FPS
-    int delay = 1000 / Settings::get("fps limit", 60);
+    Uint32 delay = 1000u / Settings::get("fps limit", 60u);
     delta_ticks = SDL_GetTicks() - ticks;
     if (delta_ticks < delay) {
       /// @todo try to run physics here (or in a separate thread)
@@ -62,6 +66,8 @@ void Game::handleEvents() {
   float mouse_sensitivity = Settings::get("mouse sensitivity", 0.3f);
   float mouse_acceleration = Settings::get("mouse acceleration", 1.1f);
 
+  InputHandler::clear();
+
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
     switch (event.type)	{
@@ -70,11 +76,11 @@ void Game::handleEvents() {
         break;
 
       case SDL_KEYDOWN:
-        keyDown(event.key.keysym.sym);
+        InputHandler::keyDown(event.key.keysym.sym);
         break;
 
       case SDL_KEYUP:
-        keyUp(event.key.keysym.sym);
+        InputHandler::keyUp(event.key.keysym.sym);
         break;
 
       case SDL_MOUSEMOTION: {
@@ -97,14 +103,15 @@ void Game::handleEvents() {
         yrel = yrel < 0.0f ? -tmp : tmp;
 
         m_player.rotate(xrel, yrel);
-        break; }
+        break;
+      }
 
       case SDL_MOUSEBUTTONDOWN:
-        buttonDown(event.button.button, event.button.x, event.button.y);
+        InputHandler::mouseDown(event.button.button, event.button.x, event.button.y);
         break;
 
       case SDL_MOUSEBUTTONUP:
-        buttonUp(event.button.button, event.button.x, event.button.y);
+        InputHandler::mouseUp(event.button.button, event.button.x, event.button.y);
         break;
 
       case SDL_VIDEORESIZE:
@@ -115,22 +122,13 @@ void Game::handleEvents() {
   }
 }
 
+void Game::handleInput() {
+  static InputEvent& quit = InputHandler::event("quit");
+  if(quit.pressed)
+    m_running = false;
+}
+
 void Game::updatePhysics(float dt) {
 
 }
 
-void Game::keyDown(SDLKey key) {
-
-}
-
-void Game::keyUp(SDLKey key) {
-
-}
-
-void Game::buttonDown(Uint8 btn, Uint16 x, Uint16 y) {
-
-}
-
-void Game::buttonUp(Uint8 btn, Uint16 x, Uint16 y) {
-
-}

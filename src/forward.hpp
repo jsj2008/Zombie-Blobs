@@ -5,6 +5,8 @@ class Animator;
 class Camera;
 class Entity;
 class Game;
+struct InputEvent;
+class InputHandler;
 class Level;
 class Light;
 class Material;
