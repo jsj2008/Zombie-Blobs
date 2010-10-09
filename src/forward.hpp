@@ -10,7 +10,7 @@ class Level;
 class Light;
 class Model;
 class Settings;
-rlass RenderBuffer;
+class RenderBuffer;
 class Animator;
 class Material;
 struct InputEvent;
@@ -26,8 +26,14 @@ class Game;
 class Renderer;
 class FrameBufferObject;
 class FBOImage;
-class FBOImage;
+class State;
+class Texture;
+class RenderPass;
+class SceneRenderer;
+class PostProc;
 
 typedef std::shared_ptr<FBOImage> FBOImagePtr;
+typedef std::shared_ptr<FrameBufferObject> FBOPtr;
+typedef std::shared_ptr<Texture> TexturePtr;
 
 #endif // FORWARD_HPP

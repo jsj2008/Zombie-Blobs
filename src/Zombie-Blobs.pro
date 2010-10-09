@@ -21,7 +21,9 @@ SOURCES += \
     glew/src/glew.c \
     overlay.cpp \
     input_handler.cpp \
-    fbo.cpp
+    fbo.cpp \
+    state.cpp \
+    texture.cpp
 
 HEADERS += \
     game.hpp \
@@ -45,7 +47,9 @@ HEADERS += \
     overlay.hpp \
     input_handler.hpp \
     zb_tr1.hpp \
-    fbo.hpp
+    fbo.hpp \
+    state.hpp \
+    texture.hpp
 
 CONFIG += link_pkgconfig
 PKGCONFIG += sdl
@@ -55,3 +59,13 @@ INCLUDEPATH += $$PWD/glew/include
 DEFINES += GLEW_STATIC
 
 LIBS += -lGL -lGLU
+
+linux-* {
+  exists(/usr/local/include/bullet/) {
+    INCLUDEPATH += /usr/local/include/bullet/
+  }
+  !exists(/usr/local/include/bullet/) {
+    INCLUDEPATH += /usr/include/bullet/
+  }
+}
+LIBS += -LinearMath

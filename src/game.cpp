@@ -1,6 +1,5 @@
 #include "game.hpp"
 #include "settings.hpp"
-#include "renderer.hpp"
 #include "scene.hpp"
 #include "input_handler.hpp"
 
@@ -17,8 +16,6 @@ Game::Game() : m_scene(0), m_level(0),
 }
 
 int Game::run() {
-  Renderer renderer;
-
   Uint32 start_ticks = SDL_GetTicks();
   Uint32 previous_ticks = start_ticks;
 
@@ -37,7 +34,7 @@ int Game::run() {
 
       m_scene->update(dt);
 
-      renderer.render(m_scene);
+      m_renderer.render(m_scene);
       m_overlay.render(m_game_state, dt);
     }
 
@@ -115,8 +112,7 @@ void Game::handleEvents() {
         break;
 
       case SDL_VIDEORESIZE:
-        for (Cameras::iterator it = m_cameras.begin(); it != m_cameras.end(); ++it)
-          (*it)->resize(event.resize.w, event.resize.h);
+        m_renderer.resize(event.resize.w, event.resize.h);
         break;
     }
   }

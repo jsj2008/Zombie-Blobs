@@ -4,6 +4,7 @@
 #include "forward.hpp"
 #include "overlay.hpp"
 #include "player.hpp"
+#include "renderer.hpp"
 #include "input_handler.hpp"
 
 #include <list>
@@ -34,6 +35,7 @@ private:
   int m_game_state;
   bool m_running;
 
+  Renderer m_renderer;
   Cameras m_cameras;
 
   InputHandler m_input;
