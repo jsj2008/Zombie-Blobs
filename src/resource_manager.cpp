@@ -21,7 +21,7 @@ ResourceManager::~ResourceManager() {
     s_instance = 0;
 }
 
-void ResourceManager::addPath(const std::string& prefix, const std::string& path) {
+void ResourceManager::addPath(const std::string& path) {
   assert(s_instance);
   std::string p = path;
 #ifdef _WIN32
@@ -32,32 +32,33 @@ void ResourceManager::addPath(const std::string& prefix, const std::string& path
     p += SEPARATOR;
   }
 
-  s_instance->m_map[prefix].push_front(p);
+  s_instance->m_list.push_front(p);
 }
 
-void ResourceManager::removePath(const std::string& prefix, const std::string& path) {
+void ResourceManager::removePath(const std::string& path) {
   assert(s_instance);
-  s_instance->m_map[prefix].remove(path);
+  s_instance->m_list.remove(path);
 }
 
-void ResourceManager::remove(const std::string& prefix) {
-  assert(s_instance);
-  s_instance->m_map.erase(prefix);
-}
-
-std::string ResourceManager::find(const std::string& prefix, const std::string& path) {
+std::string ResourceManager::find(const std::string& resource) {
   assert(s_instance);
 
-  std::string p = path;
+  std::string p = resource;
 #ifdef _WIN32
   for (std::string::iterator it = p.begin(); it != p.end(); ++it)
     if (*it == '/') *it = SEPARATOR;
 #endif
 
-  const List& list = s_instance->m_map[prefix];
-  for (List::const_iterator it = list.begin(); it != list.end(); ++it) {
+  for (List::const_iterator it = s_instance->m_list.begin();
+       it != s_instance->m_list.end(); ++it)
     if (Utils::fileExists(*it + p))
       return *it + p;
-  }
   return "";
+}
+
+std::string ResourceManager::readFile(const std::string &resource) {
+  std::string file = find(resource);
+  if (file.empty()) return file;
+
+  return Utils::readFile(file);
 }
