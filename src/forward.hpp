@@ -1,25 +1,33 @@
 #ifndef FORWARD_HPP
 #define FORWARD_HPP
 
-class Animator;
+#include "zb_tr1.hpp"
+
 class Camera;
-class Entity;
-class Game;
-class GLProgram;
-class InputHandler;
+class ResourceManager;
+class OpenGL;
 class Level;
 class Light;
-class Log;
-class Material;
 class Model;
-class OpenGL;
-class Overlay;
-class Player;
-class Renderer;
-class ResourceManager;
-class Scene;
 class Settings;
-class Shader;
+rlass RenderBuffer;
+class Animator;
+class Material;
 struct InputEvent;
+class Shader;
+class Log;
+class Entity;
+class Scene;
+class Player;
+class InputHandler;
+class Overlay;
+class GLProgram;
+class Game;
+class Renderer;
+class FrameBufferObject;
+class FBOImage;
+class FBOImage;
+
+typedef std::shared_ptr<FBOImage> FBOImagePtr;
 
 #endif // FORWARD_HPP

@@ -20,7 +20,8 @@ SOURCES += \
     settings.cpp \
     glew/src/glew.c \
     overlay.cpp \
-    input_handler.cpp
+    input_handler.cpp \
+    fbo.cpp
 
 HEADERS += \
     game.hpp \
@@ -43,7 +44,8 @@ HEADERS += \
     glew/include/GL/glew.h \
     overlay.hpp \
     input_handler.hpp \
-    zb_tr1.hpp
+    zb_tr1.hpp \
+    fbo.hpp
 
 CONFIG += link_pkgconfig
 PKGCONFIG += sdl
