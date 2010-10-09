@@ -25,6 +25,7 @@ namespace Utils {
   template <> std::string fromString<std::string>(const std::string& s);
 
   bool fileExists(const std::string& filename);
+  std::string readFile(const std::string& filename);
 }
 
 

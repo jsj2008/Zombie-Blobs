@@ -4,6 +4,8 @@
 #include <cstdarg>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <cstring>
+#include <errno.h>
 
 namespace {
   void log(Log::Level l, FILE* target, const char* fmt, va_list ap) {
@@ -27,6 +29,35 @@ namespace Utils {
   bool fileExists(const std::string& filename) {
     struct stat buf;
     return stat(filename.c_str(), &buf) == 0;
+  }
+
+  std::string readFile(const std::string& filename) {
+    std::string out;
+    FILE* file = fopen(filename.c_str(), "r");
+    if (!file) {
+      Log::error("Failed to open '%s': %s", filename.c_str(), strerror(errno));
+      return "";
+    }
+
+    fseek(file, 0, SEEK_END);
+    size_t size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    out.reserve(size);
+
+    char buffer[512];
+    size_t pos = 0, s;
+    while ((s = fread(buffer, 1, 512, file))) {
+      out.insert(pos, buffer, s);
+      pos += s;
+    }
+
+    if (pos != size) {
+      Log::error("Unexpected EOF at %lu/%lu when reading '%s'",
+                 pos, size, filename.c_str());
+    }
+
+    return out;
   }
 }
 
