@@ -5,10 +5,11 @@ class Animator;
 class Camera;
 class Entity;
 class Game;
-struct InputEvent;
+class GLProgram;
 class InputHandler;
 class Level;
 class Light;
+class Log;
 class Material;
 class Model;
 class OpenGL;
@@ -19,6 +20,6 @@ class ResourceManager;
 class Scene;
 class Settings;
 class Shader;
-class Log;
+struct InputEvent;
 
 #endif // FORWARD_HPP

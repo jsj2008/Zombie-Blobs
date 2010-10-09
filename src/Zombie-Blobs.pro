@@ -42,7 +42,8 @@ HEADERS += \
     forward.hpp \
     glew/include/GL/glew.h \
     overlay.hpp \
-    input_handler.hpp
+    input_handler.hpp \
+    zb_tr1.hpp
 
 CONFIG += link_pkgconfig
 PKGCONFIG += sdl
@@ -51,4 +52,4 @@ INCLUDEPATH += $$PWD/glew/include
 
 DEFINES += GLEW_STATIC
 
-LIBS += -lGL
+LIBS += -lGL -lGLU
