@@ -31,9 +31,13 @@ class Texture;
 class RenderPass;
 class SceneRenderer;
 class PostProc;
+class RenderContext;
+class Renderable;
+class Grid;
 
 typedef std::shared_ptr<FBOImage> FBOImagePtr;
 typedef std::shared_ptr<FrameBufferObject> FBOPtr;
 typedef std::shared_ptr<Texture> TexturePtr;
+typedef std::shared_ptr<RenderPass> RenderPassPtr;
 
 #endif // FORWARD_HPP

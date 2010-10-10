@@ -2,9 +2,10 @@
 #include "fbo.hpp"
 #include "texture.hpp"
 #include "state.hpp"
+#include "render_context.hpp"
 
-RenderPass::RenderPass() {
-}
+RenderPass::RenderPass() {}
+RenderPass::~RenderPass() {}
 
 int RenderPass::width() const {
   return m_width;
@@ -37,7 +38,9 @@ PostProc::PostProc() {
   m_viewport.setRect();
 }
 
-void PostProc::render(State& state) {
+PostProc::~PostProc() {}
+
+void PostProc::render(RenderContext& r) {
   beginFBO();
 
   m_shader.bind();
@@ -82,26 +85,26 @@ void PostProc::render(State& state) {
 
 SceneRenderer::SceneRenderer() : m_clear(0) {}
 
-void SceneRenderer::render(State& state) {
+SceneRenderer::~SceneRenderer() {}
+
+void SceneRenderer::render(RenderContext& r) {
   beginFBO();
 
   m_viewport.prepare(width(), height());
 
   if (m_clear) glClear(m_clear);
 
-  state.enable(GL_DEPTH_TEST);
-  state.enable(GL_CULL_FACE);
+  r.enable(GL_DEPTH_TEST);
+  r.enable(GL_CULL_FACE);
 
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
 
   glShadeModel(GL_SMOOTH);
 
-  /// @todo activate all lights
-
-  /// @todo collect all objects and render them
-
-  /// @todo deactivate the lights
+  r.pushLights(m_viewport);
+  r.renderObjects(m_viewport);
+  r.popLights();
 
   endFBO();
 }
@@ -112,6 +115,19 @@ void SceneRenderer::render(State& state) {
 Renderer::Renderer() : m_width(0), m_height(0) {
 }
 
-void Renderer::render(Scene* scene) {
+void Renderer::render(Scene& scene) {
+  RenderContext r(scene);
 
+  for (std::list<RenderPassPtr>::iterator it = m_render_passes.begin();
+       it != m_render_passes.end(); ++it) {
+    (*it)->render(r);
+  }
+
+}
+
+void Renderer::setupPasses() {
+  SceneRenderer* scene = new SceneRenderer;
+  scene->setClearBits(GL_DEPTH_BUFFER_BIT);
+
+  m_render_passes.push_back(RenderPassPtr(scene));
 }

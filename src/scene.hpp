@@ -1,6 +1,9 @@
 #ifndef SCENE_HPP
 #define SCENE_HPP
 
+#include "forward.hpp"
+#include "grid.hpp"
+
 /***
   * Scene includes all renderable 3D-objects, lights, the generated level etc.
   *
@@ -14,6 +17,11 @@ public:
   Scene();
 
   void update(float dt);
+
+  Grid& grid() { return m_grid; }
+
+protected:
+  Grid m_grid;
 };
 
 #endif // SCENE_HPP

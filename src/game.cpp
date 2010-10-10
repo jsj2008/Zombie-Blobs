@@ -34,7 +34,7 @@ int Game::run() {
 
       m_scene->update(dt);
 
-      m_renderer.render(m_scene);
+      m_renderer.render(*m_scene);
       m_overlay.render(m_game_state, dt);
     }
 

@@ -23,7 +23,9 @@ SOURCES += \
     input_handler.cpp \
     fbo.cpp \
     state.cpp \
-    texture.cpp
+    texture.cpp \
+    render_context.cpp \
+    grid.cpp
 
 HEADERS += \
     game.hpp \
@@ -49,7 +51,9 @@ HEADERS += \
     zb_tr1.hpp \
     fbo.hpp \
     state.hpp \
-    texture.hpp
+    texture.hpp \
+    render_context.hpp \
+    grid.hpp
 
 CONFIG += link_pkgconfig
 PKGCONFIG += sdl

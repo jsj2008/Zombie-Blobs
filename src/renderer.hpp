@@ -26,12 +26,13 @@
 class RenderPass {
 public:
   RenderPass();
+  virtual ~RenderPass();
 
   int height() const;
   int width() const;
 
   /// Render the pass
-  virtual void render(State& state) = 0;
+  virtual void render(RenderContext& r) = 0;
 
 protected:
   void beginFBO();
@@ -48,8 +49,9 @@ protected:
 class PostProc : public RenderPass {
 public:
   PostProc();
+  virtual ~PostProc();
 
-  void render(State& state);
+  void render(RenderContext& r);
 
 protected:
   typedef std::map<int, TexturePtr> In;
@@ -61,11 +63,12 @@ protected:
 class SceneRenderer : public RenderPass {
 public:
   SceneRenderer();
+  virtual ~SceneRenderer();
 
   GLbitfield clearBits() const { return m_clear; }
   void setClearBits(GLbitfield bits) { m_clear = bits; }
 
-  void render(State& state);
+  void render(RenderContext& r);
 
 protected:
   /// Bitwise OR of GL_{COLOR,DEPTH,STENCIL}_BUFFER_BIT, or zero if we don't
@@ -84,10 +87,13 @@ public:
   Renderer();
 
   void resize(int w, int h) { m_width = w; m_height = h; }
-  void render(Scene* scene);
+  void render(Scene& scene);
+
+  void setupPasses();
 
 private:
   int m_width, m_height;
+  std::list<RenderPassPtr> m_render_passes;
 };
 
 #endif // RENDERER_HPP

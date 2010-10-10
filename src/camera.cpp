@@ -8,6 +8,8 @@ Camera::Camera() : m_type(Perspective), m_fov(45), m_near(0.1f), m_far(1000.0f) 
 void Camera::prepare(int width, int height) {
   glCheck("Camera::prepare");
   glViewport(0, 0, width, height);
+  m_width = width;
+  m_height = height;
   if (m_type == Perspective) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
