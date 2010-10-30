@@ -49,7 +49,12 @@ bool Shader::compile() {
     GLchar * log = new GLchar[len];
     GLsizei size = len;
     glRun(glGetShaderInfoLog(m_shader, size, &size, log));
-    Log::error("GLSL compiler output: %s", log);
+    const char * msg = "GLSL compiler output: %s";
+    if (ok) {
+      Log::info(msg, log);
+    } else {
+      Log::error(msg, log);
+    }
     delete[] log;
   }
 
@@ -132,7 +137,12 @@ bool GLProgram::link(bool restore) {
     GLchar * log = new GLchar[len];
     GLsizei size = len;
     glRun(glGetProgramInfoLog(m_prog, size, &size, log));
-    Log::error("GLSL linker output: %s", log);
+    const char * msg = "GLSL linker output: %s";
+    if (ok) {
+      Log::info(msg, log);
+    } else {
+      Log::error(msg, log);
+    }
     delete[] log;
   }
 
