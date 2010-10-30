@@ -12,6 +12,11 @@ Game::Game() : m_scene(0), m_level(0),
     m_game_state(GAME), m_running(true) {
   m_cameras.push_back(&m_player);
 
+  m_renderer.setupPasses();
+  SDL_Surface * surf = SDL_GetVideoSurface();
+  if (surf)
+    m_renderer.resize(surf->w, surf->h);
+
   InputHandler::setKey(SDLK_ESCAPE, "quit");
 }
 
@@ -33,15 +38,15 @@ int Game::run() {
       updatePhysics(dt);
 
       m_scene->update(dt);
-
       m_renderer.render(*m_scene);
       m_overlay.render(m_game_state, dt);
     }
 
     if (m_game_state & MENU) {
+
+
       // render menu
     }
-
     SDL_GL_SwapBuffers();
 
     previous_ticks += delta_ticks;

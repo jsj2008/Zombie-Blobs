@@ -6,6 +6,7 @@
 #endif
 #include "GL/glew.h"
 #include <GL/gl.h>
+#include <GL/glut.h>
 
 void s_check_gl(const char* str, const char* file, int line);
 

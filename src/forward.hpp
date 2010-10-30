@@ -29,7 +29,7 @@ class FBOImage;
 class State;
 class Texture;
 class RenderPass;
-class SceneRenderer;
+class SceneRenderPass;
 class PostProc;
 class RenderContext;
 class Renderable;
@@ -39,5 +39,6 @@ typedef std::shared_ptr<FBOImage> FBOImagePtr;
 typedef std::shared_ptr<FrameBufferObject> FBOPtr;
 typedef std::shared_ptr<Texture> TexturePtr;
 typedef std::shared_ptr<RenderPass> RenderPassPtr;
+typedef std::shared_ptr<Renderable> RenderablePtr;
 
 #endif // FORWARD_HPP

@@ -11,6 +11,8 @@ Entity::~Entity() {}
 void Entity::render(RenderContext& r, bool bind_shader) {
   if (m_material)
     m_material->bind(r, *this, bind_shader);
+}
 
+void Entity::update(float dt) {
 
 }

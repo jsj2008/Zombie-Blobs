@@ -8,7 +8,7 @@
 
 class Grid {
 public:
-  typedef std::set<Renderable*> GridSet;
+  typedef std::set<RenderablePtr> GridSet;
 
   Grid(float width, float height, int resx, int resy);
 

@@ -18,9 +18,9 @@ void State::setLight(int light_id, bool in_use) {
 }
 
 void State::enable(GLenum cap) {
-  glEnable(cap);
+  glRun(glEnable(cap));
 }
 
 void State::disable(GLenum cap) {
-  glDisable(cap);
+  glRun(glDisable(cap));
 }

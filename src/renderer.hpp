@@ -30,6 +30,7 @@ public:
 
   int height() const;
   int width() const;
+  void resize(int w, int h) { m_width = w; m_height = h; }
 
   /// Render the pass
   virtual void render(RenderContext& r) = 0;
@@ -60,10 +61,10 @@ protected:
   GLProgram m_shader;
 };
 
-class SceneRenderer : public RenderPass {
+class SceneRenderPass : public RenderPass {
 public:
-  SceneRenderer();
-  virtual ~SceneRenderer();
+  SceneRenderPass();
+  virtual ~SceneRenderPass();
 
   GLbitfield clearBits() const { return m_clear; }
   void setClearBits(GLbitfield bits) { m_clear = bits; }
@@ -86,7 +87,7 @@ class Renderer {
 public:
   Renderer();
 
-  void resize(int w, int h) { m_width = w; m_height = h; }
+  void resize(int w, int h);
   void render(Scene& scene);
 
   void setupPasses();

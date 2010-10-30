@@ -23,6 +23,8 @@ public:
 
   static float gametime, dt;
 
+  void setScene(Scene * scene) { m_scene = scene; }
+
 private:
   typedef std::list<Camera*> Cameras;
 

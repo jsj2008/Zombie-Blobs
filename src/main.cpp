@@ -2,11 +2,33 @@
 #include "utils.hpp"
 #include "game.hpp"
 #include "opengl.hpp"
+#include "scene.hpp"
+#include "entity.hpp"
 
 #include <SDL.h>
 #include <cstdlib>
 
 #include <string>
+
+struct TestEntity : public Entity {
+  float m_time;
+  TestEntity() : Entity(), m_time(0) {}
+
+  void render(RenderContext& r, bool bind_shader = true) {
+    glColor4f(1, 0.5, 0.7, 0.8);
+
+    glBegin(GL_TRIANGLES);
+    glVertex3f(-1, -1, -5 + cos(m_time));
+
+    glVertex3f(1, -1, -5 + sin(m_time));
+    glVertex3f(1, 1, -5);
+    glEnd();
+  }
+
+  virtual void update(float dt) {
+    m_time += dt;
+  };
+};
 
 #define SDL_Check(r) do { Log::debug("Running: " #r); \
     if (r) sdl_error(#r); } while(0);
@@ -41,14 +63,15 @@ int main(int argc, char* argv[]) {
     Log::error("glewItem failed: %s", glewGetErrorString(err));
     return 1;
   }
-
   Log::info("Using GLEW %s", glewGetString(GLEW_VERSION));
 
   if (fs)
     SDL_WM_GrabInput(SDL_GRAB_ON);
   SDL_ShowCursor(false);
-
+  Scene * gameScene = new Scene();
+  gameScene->root().reset(new TestEntity());
   Game game;
+  game.setScene(gameScene);
   int ret = game.run();
 
   SDL_WM_GrabInput(SDL_GRAB_OFF);

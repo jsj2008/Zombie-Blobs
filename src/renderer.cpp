@@ -4,7 +4,9 @@
 #include "state.hpp"
 #include "render_context.hpp"
 
-RenderPass::RenderPass() {}
+RenderPass::RenderPass() :
+    m_width(0), m_height(0) {
+}
 RenderPass::~RenderPass() {}
 
 int RenderPass::width() const {
@@ -83,23 +85,22 @@ void PostProc::render(RenderContext& r) {
   endFBO();
 }
 
-SceneRenderer::SceneRenderer() : m_clear(0) {}
+SceneRenderPass::SceneRenderPass() : m_clear(0) {}
 
-SceneRenderer::~SceneRenderer() {}
+SceneRenderPass::~SceneRenderPass() {}
 
-void SceneRenderer::render(RenderContext& r) {
+void SceneRenderPass::render(RenderContext& r) {
   beginFBO();
 
   m_viewport.prepare(width(), height());
-
+  glClearColor(0.1, 0.4, 0.7, 0.8);
   if (m_clear) glClear(m_clear);
-
+  glViewport(0, 0, width(), height());
   r.enable(GL_DEPTH_TEST);
   r.enable(GL_CULL_FACE);
 
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
-
   glShadeModel(GL_SMOOTH);
 
   r.pushLights(m_viewport);
@@ -115,19 +116,29 @@ void SceneRenderer::render(RenderContext& r) {
 Renderer::Renderer() : m_width(0), m_height(0) {
 }
 
-void Renderer::render(Scene& scene) {
-  RenderContext r(scene);
+/// FIXME: this is wrong
+void Renderer::resize(int w, int h) {
 
+  m_width = w;
+  m_height = h;
+  for (std::list<RenderPassPtr>::iterator it = m_render_passes.begin();
+       it != m_render_passes.end(); ++it) {
+    (*it)->resize(w, h);
+  }
+}
+
+void Renderer::render(Scene& scene) {
+
+  RenderContext r(scene);
   for (std::list<RenderPassPtr>::iterator it = m_render_passes.begin();
        it != m_render_passes.end(); ++it) {
     (*it)->render(r);
   }
-
 }
 
 void Renderer::setupPasses() {
-  SceneRenderer* scene = new SceneRenderer;
-  scene->setClearBits(GL_DEPTH_BUFFER_BIT);
+  SceneRenderPass* scene = new SceneRenderPass;
+  scene->setClearBits(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
   m_render_passes.push_back(RenderPassPtr(scene));
 }
