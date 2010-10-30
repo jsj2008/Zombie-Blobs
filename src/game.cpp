@@ -8,7 +8,12 @@
 float Game::gametime = 0.0f;
 float Game::dt = 0.0f;
 
-Game::Game() : m_scene(0), m_level(0),
+void sdl_error(const char* func) {
+ Log::error("SDL error: %s: %s", func, SDL_GetError());
+ exit(EXIT_FAILURE);
+}
+
+Game::Game() : m_scene(0), m_surface(0), m_level(0),
     m_game_state(GAME), m_running(true) {
   m_cameras.push_back(&m_player);
 
@@ -117,6 +122,8 @@ void Game::handleEvents() {
         break;
 
       case SDL_VIDEORESIZE:
+        SDL_Check(!(m_surface = SDL_SetVideoMode(event.resize.w, event.resize.h,
+                                                 0, m_surface->flags)));
         m_renderer.resize(event.resize.w, event.resize.h);
         break;
     }

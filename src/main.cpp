@@ -30,14 +30,6 @@ struct TestEntity : public Entity {
   };
 };
 
-#define SDL_Check(r) do { Log::debug("Running: " #r); \
-    if (r) sdl_error(#r); } while(0);
-
-void sdl_error(const char* func) {
-  Log::error("SDL error: %s: %s", func, SDL_GetError());
-  exit(EXIT_FAILURE);
-}
-
 int main(int argc, char* argv[]) {
   Log log;
   Settings settings(argc, argv);
@@ -71,6 +63,7 @@ int main(int argc, char* argv[]) {
   Scene * gameScene = new Scene();
   gameScene->root().reset(new TestEntity());
   Game game;
+  game.setSurface(surface);
   game.setScene(gameScene);
   int ret = game.run();
 

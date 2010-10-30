@@ -11,6 +11,11 @@
 
 #include <SDL.h>
 
+#define SDL_Check(r) do { Log::debug("Running: " #r); \
+    if (r) sdl_error(#r); } while(0);
+
+void sdl_error(const char* func);
+
 /// Game engine main class
 class Game {
 public:
@@ -23,12 +28,14 @@ public:
 
   static float gametime, dt;
 
-  void setScene(Scene * scene) { m_scene = scene; }
+  void setScene(Scene* scene) { m_scene = scene; }
+  void setSurface(SDL_Surface* surface) { m_surface = surface; }
 
 private:
   typedef std::list<Camera*> Cameras;
 
   Scene* m_scene;
+  SDL_Surface* m_surface;
   Level* m_level;
   Overlay m_overlay;
 
