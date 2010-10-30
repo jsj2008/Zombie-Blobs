@@ -4,6 +4,7 @@
 #include "opengl.hpp"
 #include "scene.hpp"
 #include "entity.hpp"
+#include "resource_manager.hpp"
 
 #include <SDL.h>
 #include <cstdlib>
@@ -33,6 +34,8 @@ struct TestEntity : public Entity {
 int main(int argc, char* argv[]) {
   Log log;
   Settings settings(argc, argv);
+  ResourceManager resources;
+  resources.addPath(".");
 
   Log::info("Starting game");
 

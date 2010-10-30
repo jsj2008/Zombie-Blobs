@@ -45,7 +45,8 @@ PostProc::~PostProc() {}
 void PostProc::render(RenderContext& r) {
   beginFBO();
 
-  m_shader.bind();
+  if (!m_shader.shaders().empty())
+    m_shader.bind();
 
   /// @todo handle shader input here
 
@@ -59,7 +60,9 @@ void PostProc::render(RenderContext& r) {
   for (In::iterator it = m_in.begin(); it != m_in.end(); ++it) {
     TexturePtr tex = it->second;
     tex->bind(it->first);
-    m_shader.setUniform(tex->name(), it->first);
+
+    if (!m_shader.shaders().empty())
+      m_shader.setUniform(tex->name(), it->first);
   }
   glBegin(GL_QUADS);
 
@@ -80,7 +83,8 @@ void PostProc::render(RenderContext& r) {
   for (In::iterator it = m_in.begin(); it != m_in.end(); ++it)
     it->second->unbind();
 
-  m_shader.unbind();
+  if (!m_shader.shaders().empty())
+    m_shader.unbind();
 
   endFBO();
 }
@@ -139,6 +143,15 @@ void Renderer::render(Scene& scene) {
 void Renderer::setupPasses() {
   SceneRenderPass* scene = new SceneRenderPass;
   scene->setClearBits(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+  TexturePtr tex(new Texture());
+  tex->setName("scene");
+  scene->m_color = tex;
+
+  PostProc* post = new PostProc();
+  post->m_in.insert(std::make_pair(0, tex));
+  if (!post->m_shader.addShader("postproc.fs", Shader::Fragment))
+    Log::error("could not load postproc shader postproc.fs");
 
   m_render_passes.push_back(RenderPassPtr(scene));
+  m_render_passes.push_back(RenderPassPtr(post));
 }

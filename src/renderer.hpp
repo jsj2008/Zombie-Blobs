@@ -45,6 +45,8 @@ protected:
   FBOImagePtr m_depth, m_color;
 
   Camera m_viewport;
+
+  friend class Renderer;
 };
 
 class PostProc : public RenderPass {
@@ -59,6 +61,7 @@ protected:
   In m_in;
 
   GLProgram m_shader;
+  friend class Renderer;
 };
 
 class SceneRenderPass : public RenderPass {
