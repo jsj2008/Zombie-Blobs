@@ -44,8 +44,7 @@ protected:
   FBOPtr m_fbo;
   FBOImagePtr m_depth, m_color;
 
-  Camera m_viewport;
-
+  CameraPtr m_viewport;
   friend class Renderer;
 };
 

@@ -25,7 +25,8 @@ SOURCES += \
     state.cpp \
     texture.cpp \
     render_context.cpp \
-    grid.cpp
+    grid.cpp \
+    tga_image.cpp
 
 HEADERS += \
     game.hpp \
@@ -53,7 +54,8 @@ HEADERS += \
     state.hpp \
     texture.hpp \
     render_context.hpp \
-    grid.hpp
+    grid.hpp \
+    tga_image.h
 
 CONFIG += link_pkgconfig
 PKGCONFIG += sdl

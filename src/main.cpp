@@ -18,11 +18,12 @@ struct TestEntity : public Entity {
   void render(RenderContext& r, bool bind_shader = true) {
     glColor4f(1, 0.5, 0.7, 0.8);
 
-    glBegin(GL_TRIANGLES);
-    glVertex3f(-1, -1, -5 + cos(m_time));
-
+    glBegin(GL_TRIANGLE_STRIP);
+    glVertex3f(-5, -1, -15 + cos(m_time));
     glVertex3f(1, -1, -5 + sin(m_time));
     glVertex3f(1, 1, -5);
+    glVertex3f(15.5, 0.5, -30);
+
     glEnd();
   }
 
@@ -60,11 +61,12 @@ int main(int argc, char* argv[]) {
   }
   Log::info("Using GLEW %s", glewGetString(GLEW_VERSION));
 
-  if (fs)
+  if (true || fs)
     SDL_WM_GrabInput(SDL_GRAB_ON);
   SDL_ShowCursor(false);
   Scene * gameScene = new Scene();
   gameScene->root().reset(new TestEntity());
+
   Game game;
   game.setSurface(surface);
   game.setScene(gameScene);

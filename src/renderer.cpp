@@ -3,9 +3,10 @@
 #include "texture.hpp"
 #include "state.hpp"
 #include "render_context.hpp"
+#include "game.hpp"
 
 RenderPass::RenderPass() :
-    m_width(0), m_height(0) {
+    m_width(0), m_height(0), m_viewport(new Camera()) {
 }
 RenderPass::~RenderPass() {}
 
@@ -37,7 +38,7 @@ void RenderPass::endFBO() {
 
 
 PostProc::PostProc() {
-  m_viewport.setRect();
+  m_viewport->setRect();
 }
 
 PostProc::~PostProc() {}
@@ -50,7 +51,7 @@ void PostProc::render(RenderContext& r) {
 
   /// @todo handle shader input here
 
-  m_viewport.prepare(width(), height());
+  m_viewport->prepare(width(), height());
 
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_LIGHTING);
@@ -96,7 +97,7 @@ SceneRenderPass::~SceneRenderPass() {}
 void SceneRenderPass::render(RenderContext& r) {
   beginFBO();
 
-  m_viewport.prepare(width(), height());
+  m_viewport->prepare(width(), height());
   glClearColor(0.1, 0.4, 0.7, 0.8);
   if (m_clear) glClear(m_clear);
   glViewport(0, 0, width(), height());
@@ -107,8 +108,8 @@ void SceneRenderPass::render(RenderContext& r) {
   glFrontFace(GL_CCW);
   glShadeModel(GL_SMOOTH);
 
-  r.pushLights(m_viewport);
-  r.renderObjects(m_viewport);
+  r.pushLights(*m_viewport);
+  r.renderObjects(*m_viewport);
   r.popLights();
 
   endFBO();
@@ -132,7 +133,6 @@ void Renderer::resize(int w, int h) {
 }
 
 void Renderer::render(Scene& scene) {
-
   RenderContext r(scene);
   for (std::list<RenderPassPtr>::iterator it = m_render_passes.begin();
        it != m_render_passes.end(); ++it) {
@@ -146,11 +146,19 @@ void Renderer::setupPasses() {
   TexturePtr tex(new Texture());
   tex->setName("scene");
   scene->m_color = tex;
+  TexturePtr depth(new Texture());
+
+  depth->setName("sceneDepth");
+  scene->m_depth = depth;
 
   PostProc* post = new PostProc();
   post->m_in.insert(std::make_pair(0, tex));
+  post->m_in.insert(std::make_pair(1, depth));
   if (!post->m_shader.addShader("postproc.fs", Shader::Fragment))
     Log::error("could not load postproc shader postproc.fs");
+
+  PlayerPtr player = Game::instance()->player();
+  scene->m_viewport = player;
 
   m_render_passes.push_back(RenderPassPtr(scene));
   m_render_passes.push_back(RenderPassPtr(post));

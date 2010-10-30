@@ -40,5 +40,7 @@ typedef std::shared_ptr<FrameBufferObject> FBOPtr;
 typedef std::shared_ptr<Texture> TexturePtr;
 typedef std::shared_ptr<RenderPass> RenderPassPtr;
 typedef std::shared_ptr<Renderable> RenderablePtr;
+typedef std::shared_ptr<Camera> CameraPtr;
+typedef std::shared_ptr<Player> PlayerPtr;
 
 #endif // FORWARD_HPP

@@ -40,6 +40,8 @@ protected:
   float m_near;
   /// Far clipping plane distance
   float m_far;
+
+  btVector3 m_center;
 };
 
 #endif // CAMERA_HPP

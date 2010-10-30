@@ -30,16 +30,17 @@ public:
 
   void setScene(Scene* scene) { m_scene = scene; }
   void setSurface(SDL_Surface* surface) { m_surface = surface; }
-
+  static Game* instance() { return s_instance; }
+  PlayerPtr player() { return m_player; }
 private:
-  typedef std::list<Camera*> Cameras;
+  typedef std::list<CameraPtr> Cameras;
 
   Scene* m_scene;
   SDL_Surface* m_surface;
   Level* m_level;
   Overlay m_overlay;
 
-  Player m_player;
+  PlayerPtr m_player;
 
   int m_game_state;
   bool m_running;
@@ -57,6 +58,9 @@ private:
   void keyUp(SDLKey key);
   void buttonDown(Uint8 btn, Uint16 x, Uint16 y);
   void buttonUp(Uint8 btn, Uint16 x, Uint16 y);
+
+
+  static Game* s_instance;
 };
 
 #endif // GAME_HPP

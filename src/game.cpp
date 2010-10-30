@@ -2,11 +2,13 @@
 #include "settings.hpp"
 #include "scene.hpp"
 #include "input_handler.hpp"
+#include "level.hpp"
 
 #include <cmath>
 
 float Game::gametime = 0.0f;
 float Game::dt = 0.0f;
+Game* Game::s_instance = 0;
 
 void sdl_error(const char* func) {
  Log::error("SDL error: %s: %s", func, SDL_GetError());
@@ -14,14 +16,18 @@ void sdl_error(const char* func) {
 }
 
 Game::Game() : m_scene(0), m_surface(0), m_level(0),
-    m_game_state(GAME), m_running(true) {
-  m_cameras.push_back(&m_player);
+    m_game_state(GAME), m_running(true),
+    m_player(new Player()) {
+  assert(!s_instance);
+  s_instance = this;
+  m_cameras.push_back(m_player);
 
   m_renderer.setupPasses();
   SDL_Surface * surf = SDL_GetVideoSurface();
   if (surf)
     m_renderer.resize(surf->w, surf->h);
 
+  m_level = new Level();
   InputHandler::setKey(SDLK_ESCAPE, "quit");
 }
 
@@ -41,7 +47,6 @@ int Game::run() {
 
     if ((m_game_state & GAME) && m_scene) {
       updatePhysics(dt);
-
       m_scene->update(dt);
       m_renderer.render(*m_scene);
       m_overlay.render(m_game_state, dt);
@@ -109,7 +114,7 @@ void Game::handleEvents() {
         tmp = std::pow(std::abs(yrel)*mouse_sensitivity, mouse_acceleration);
         yrel = yrel < 0.0f ? -tmp : tmp;
 
-        m_player.rotate(xrel, yrel);
+        m_player->rotate(xrel, yrel);
         break;
       }
 
