@@ -42,6 +42,8 @@ protected:
   float m_far;
 
   btVector3 m_center;
+  btVector3 m_eye;
+  btVector3 m_up;
 };
 
 #endif // CAMERA_HPP

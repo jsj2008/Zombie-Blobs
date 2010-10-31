@@ -5,6 +5,7 @@
 #include "scene.hpp"
 #include "entity.hpp"
 #include "resource_manager.hpp"
+#include "level.hpp"
 
 #include <SDL.h>
 #include <cstdlib>
@@ -16,6 +17,17 @@ struct TestEntity : public Entity {
   TestEntity() : Entity(), m_time(0) {}
 
   void render(RenderContext& r, bool bind_shader = true) {
+    /*
+    glColor4f(0.5, 1, 0.3, 0.9);
+    glBegin(GL_QUADS);
+    glVertex3f(-50, -50, 2);
+    glVertex3f(50, -50, -2);
+    glVertex3f(50, 50, -2);
+    glVertex3f(-50, 50, -2);
+    glEnd();
+    */
+
+
     glColor4f(1, 0.5, 0.7, 0.8);
 
     glBegin(GL_TRIANGLE_STRIP);
@@ -23,8 +35,9 @@ struct TestEntity : public Entity {
     glVertex3f(1, 5 + sin(m_time), -1);
     glVertex3f(1, 5, 1);
     glVertex3f(15.5, 30, 0.5);
-
     glEnd();
+
+
   }
 
   virtual void update(float dt) {
@@ -65,7 +78,8 @@ int main(int argc, char* argv[]) {
     SDL_WM_GrabInput(SDL_GRAB_ON);
   SDL_ShowCursor(false);
   Scene * gameScene = new Scene();
-  gameScene->root().reset(new TestEntity());
+  gameScene->root().reset(new Level());
+  gameScene->root()->addChild(RenderablePtr(new TestEntity()));
 
   Game game;
   game.setSurface(surface);

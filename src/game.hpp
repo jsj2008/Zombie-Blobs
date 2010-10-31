@@ -32,12 +32,13 @@ public:
   void setSurface(SDL_Surface* surface) { m_surface = surface; }
   static Game* instance() { return s_instance; }
   PlayerPtr player() { return m_player; }
+  LevelPtr level() { return m_level; }
 private:
   typedef std::list<CameraPtr> Cameras;
 
   Scene* m_scene;
   SDL_Surface* m_surface;
-  Level* m_level;
+  LevelPtr m_level;
   Overlay m_overlay;
 
   PlayerPtr m_player;

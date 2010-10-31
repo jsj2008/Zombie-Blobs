@@ -15,7 +15,7 @@ void sdl_error(const char* func) {
  exit(EXIT_FAILURE);
 }
 
-Game::Game() : m_scene(0), m_surface(0), m_level(0),
+Game::Game() : m_scene(0), m_surface(0), m_level(new Level()),
     m_game_state(GAME), m_running(true),
     m_player(new Player()) {
   assert(!s_instance);
@@ -27,7 +27,6 @@ Game::Game() : m_scene(0), m_surface(0), m_level(0),
   if (surf)
     m_renderer.resize(surf->w, surf->h);
 
-  m_level = new Level();
   InputHandler::setKey(SDLK_ESCAPE, "quit");
 }
 

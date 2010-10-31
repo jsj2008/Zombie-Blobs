@@ -4,7 +4,7 @@
 #include <cassert>
 
 Camera::Camera() : m_type(Perspective), m_fov(45), m_near(0.1f), m_far(1000.0f),
-  m_center(0, 1, 0) {}
+  m_center(0, 1, 0), m_eye(0, 0, 0), m_up(0, 0, 1) {}
 
 void Camera::prepare(int width, int height) {
   glCheck("Camera::prepare");
@@ -19,9 +19,9 @@ void Camera::prepare(int width, int height) {
     glMatrixMode(GL_MODELVIEW);
 
     glLoadIdentity();
-    gluLookAt(0, 0, 0,
+    gluLookAt(m_eye.x(), m_eye.y(), m_eye.z(),
               m_center.x(), m_center.y(), m_center.z(),
-              0, 0, 1);
+              m_up.x(), m_up.y(), m_up.z());
 //    gluLookAt(m_position.x(), m_position.y(), m_position.z(),
 //              m_target.x(), m_target.y(), m_target.z(),
 //              m_up.x(), m_up.y(), m_up.z());

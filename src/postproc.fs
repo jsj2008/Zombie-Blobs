@@ -14,11 +14,10 @@ void main() {
   vec2 tx = vec2(gl_TexCoord[0].x*c.x, gl_TexCoord[0].y*c.y);
   gl_FragColor = texture2D(scene, tx);
   float z1 = mangleDepth(texture2D(sceneDepth, tx).x);
-  float z2 = mangleDepth(texture2D(sceneDepth, vec2(tx.x+0.01, tx.y)).x);
-  float z3 = mangleDepth(texture2D(sceneDepth, vec2(tx.x, tx.y+0.01)).x);
-  float z4 = mangleDepth(texture2D(sceneDepth, vec2(tx.x-0.01, tx.y)).x);
-  float z5 = mangleDepth(texture2D(sceneDepth, vec2(tx.x, tx.y-0.01)).x);
-	float dz = (z2-z1) + (z3-z1) + (z4-z1) + (z5-z1);
-	gl_FragColor *= 1 - clamp(dz, 0.0, 1.0);
-
+  float z2 = mangleDepth(texture2D(sceneDepth, vec2(tx.x+0.002, tx.y)).x);
+  float z3 = mangleDepth(texture2D(sceneDepth, vec2(tx.x, tx.y+0.002)).x);
+  float z4 = mangleDepth(texture2D(sceneDepth, vec2(tx.x-0.002, tx.y)).x);
+  float z5 = mangleDepth(texture2D(sceneDepth, vec2(tx.x, tx.y-0.002)).x);
+  float dz = (z2-z1) + (z3-z1) + (z4-z1) + (z5-z1);
+  gl_FragColor *= clamp(pow(1-10*dz, 100), 0.5, 1.1);
 }

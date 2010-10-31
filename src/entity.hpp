@@ -4,11 +4,11 @@
 #include "forward.hpp"
 #include "zb_tr1.hpp"
 
-#include <list>
+#include <set>
 
 class Renderable {
 public:
-  typedef std::list<RenderablePtr> Children;
+  typedef std::set<RenderablePtr> Children;
 
   Renderable();
   virtual ~Renderable();
@@ -19,6 +19,7 @@ public:
 
 
   Children & getChildren() { return m_children; }
+  void addChild(RenderablePtr ch) { m_children.insert(ch); }
 protected:
   Material* m_material;
 private:
