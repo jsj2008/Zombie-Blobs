@@ -19,10 +19,10 @@ struct TestEntity : public Entity {
     glColor4f(1, 0.5, 0.7, 0.8);
 
     glBegin(GL_TRIANGLE_STRIP);
-    glVertex3f(-5, -1, -15 + cos(m_time));
-    glVertex3f(1, -1, -5 + sin(m_time));
-    glVertex3f(1, 1, -5);
-    glVertex3f(15.5, 0.5, -30);
+    glVertex3f(-5, 15 + cos(m_time), -1);
+    glVertex3f(1, 5 + sin(m_time), -1);
+    glVertex3f(1, 5, 1);
+    glVertex3f(15.5, 30, 0.5);
 
     glEnd();
   }
