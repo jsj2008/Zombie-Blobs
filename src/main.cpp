@@ -77,12 +77,15 @@ int main(int argc, char* argv[]) {
   if (true || fs)
     SDL_WM_GrabInput(SDL_GRAB_ON);
   SDL_ShowCursor(false);
-  Scene * gameScene = new Scene();
-  gameScene->root().reset(new Level());
-  gameScene->root()->addChild(RenderablePtr(new TestEntity()));
+
 
   Game game;
   game.setSurface(surface);
+
+  Scene * gameScene = new Scene();
+  gameScene->root() = game.level();
+  gameScene->root()->addChild(RenderablePtr(new TestEntity()));
+
   game.setScene(gameScene);
   int ret = game.run();
 
