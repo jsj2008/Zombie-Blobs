@@ -56,7 +56,7 @@ public:
   void render(RenderContext& r);
 
 protected:
-  typedef std::map<int, TexturePtr> In;
+  typedef std::map<const std::string, TexturePtr> In;
   In m_in;
 
   GLProgram m_shader;

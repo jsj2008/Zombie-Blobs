@@ -153,6 +153,7 @@ bool GLProgram::link(bool restore) {
 }
 
 bool GLProgram::isLinked() {
+  /// @todo use cached value
   glCheck("GLProgram::isLinked");
   if (!m_prog) return false;
   GLint b = 0;

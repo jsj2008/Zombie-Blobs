@@ -44,6 +44,7 @@ PostProc::PostProc() {
 PostProc::~PostProc() {}
 
 void PostProc::render(RenderContext& r) {
+  r.push();
   beginFBO();
 
   if (!m_shader.shaders().empty())
@@ -60,10 +61,12 @@ void PostProc::render(RenderContext& r) {
 
   for (In::iterator it = m_in.begin(); it != m_in.end(); ++it) {
     TexturePtr tex = it->second;
-    tex->bind(it->first);
 
-    if (!m_shader.shaders().empty())
-      m_shader.setUniform(tex->name(), it->first);
+    int unit = r.reserveTexUnit();
+    tex->bind(unit);
+
+    if (m_shader.isLinked())
+      m_shader.setUniform(it->first, unit);
   }
   glBegin(GL_QUADS);
 
@@ -88,6 +91,7 @@ void PostProc::render(RenderContext& r) {
     m_shader.unbind();
 
   endFBO();
+  r.pop();
 }
 
 SceneRenderPass::SceneRenderPass() : m_clear(0) {}
@@ -144,16 +148,14 @@ void Renderer::setupPasses() {
   SceneRenderPass* scene = new SceneRenderPass;
   scene->setClearBits(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
   TexturePtr tex(new Texture());
-  tex->setName("scene");
   scene->m_color = tex;
   TexturePtr depth(new Texture());
 
-  depth->setName("sceneDepth");
   scene->m_depth = depth;
 
   PostProc* post = new PostProc();
-  post->m_in.insert(std::make_pair(0, tex));
-  post->m_in.insert(std::make_pair(1, depth));
+  post->m_in["scene"] = tex;
+  post->m_in["sceneDepth"] = depth;
   if (!post->m_shader.addShader("postproc.fs", Shader::Fragment))
     Log::error("could not load postproc shader postproc.fs");
 

@@ -16,8 +16,7 @@ void sdl_error(const char* func) {
 }
 
 Game::Game() : m_scene(0), m_surface(0), m_level(new Level()),
-    m_game_state(GAME), m_running(true),
-    m_player(new Player()) {
+    m_player(new Player()), m_game_state(GAME), m_running(true) {
   assert(!s_instance);
   s_instance = this;
   m_cameras.push_back(m_player);
