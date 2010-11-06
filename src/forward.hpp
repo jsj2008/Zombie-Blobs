@@ -34,6 +34,7 @@ class PostProc;
 class RenderContext;
 class Renderable;
 class Grid;
+class Physics;
 
 typedef std::shared_ptr<FBOImage> FBOImagePtr;
 typedef std::shared_ptr<FrameBufferObject> FBOPtr;
@@ -43,5 +44,8 @@ typedef std::shared_ptr<Renderable> RenderablePtr;
 typedef std::shared_ptr<Camera> CameraPtr;
 typedef std::shared_ptr<Player> PlayerPtr;
 typedef std::shared_ptr<Level> LevelPtr;
+
+class btBroadphaseInterface;
+class btSoftRigidDynamicsWorld;
 
 #endif // FORWARD_HPP

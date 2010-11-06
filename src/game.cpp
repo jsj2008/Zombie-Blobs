@@ -3,6 +3,7 @@
 #include "scene.hpp"
 #include "input_handler.hpp"
 #include "level.hpp"
+#include "physics.hpp"
 
 #include <cmath>
 
@@ -16,7 +17,8 @@ void sdl_error(const char* func) {
 }
 
 Game::Game() : m_scene(0), m_surface(0), m_level(new Level()),
-    m_player(new Player()), m_game_state(GAME), m_running(true) {
+    m_player(new Player()), m_game_state(GAME), m_running(true),
+    m_physics(new Physics) {
   assert(!s_instance);
   s_instance = this;
   m_cameras.push_back(m_player);
@@ -33,6 +35,8 @@ int Game::run() {
   Uint32 start_ticks = SDL_GetTicks();
   Uint32 previous_ticks = start_ticks;
 
+  m_physics->init();
+
   while (m_running) {
     Uint32 ticks = SDL_GetTicks();
     Uint32 delta_ticks = ticks - previous_ticks;
@@ -44,7 +48,7 @@ int Game::run() {
     handleInput();
 
     if ((m_game_state & GAME) && m_scene) {
-      updatePhysics(dt);
+      m_physics->update(dt);
       m_scene->update(dt);
       m_renderer.render(*m_scene);
       m_overlay.render(m_game_state, dt);
@@ -138,8 +142,3 @@ void Game::handleInput() {
   if(quit.pressed)
     m_running = false;
 }
-
-void Game::updatePhysics(float dt) {
-
-}
-

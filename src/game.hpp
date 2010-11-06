@@ -46,13 +46,14 @@ private:
   int m_game_state;
   bool m_running;
 
+  std::shared_ptr<Physics> m_physics;
+
   Renderer m_renderer;
   Cameras m_cameras;
 
   InputHandler m_input;
 
   void handleEvents();
-  void updatePhysics(float dt);
   void handleInput();
 
   void keyDown(SDLKey key);

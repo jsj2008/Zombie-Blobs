@@ -26,7 +26,8 @@ SOURCES += \
     texture.cpp \
     render_context.cpp \
     grid.cpp \
-    tga_image.cpp
+    tga_image.cpp \
+    physics.cpp
 
 HEADERS += \
     game.hpp \
@@ -55,7 +56,8 @@ HEADERS += \
     texture.hpp \
     render_context.hpp \
     grid.hpp \
-    tga_image.h
+    tga_image.h \
+    physics.hpp
 
 CONFIG += link_pkgconfig
 PKGCONFIG += sdl
@@ -69,9 +71,10 @@ LIBS += -lGL -lGLU
 linux-* {
   exists(/usr/local/include/bullet/) {
     INCLUDEPATH += /usr/local/include/bullet/
+    LIBS += -Wl,-rpath,/usr/local/lib
   }
   !exists(/usr/local/include/bullet/) {
     INCLUDEPATH += /usr/include/bullet/
   }
 }
-LIBS += -LinearMath
+LIBS += -lLinearMath -lBulletDynamics -lBulletCollision -lBulletSoftBody
