@@ -29,6 +29,12 @@ Game::Game() : m_scene(0), m_surface(0), m_level(new Level()),
     m_renderer.resize(surf->w, surf->h);
 
   InputHandler::setKey(SDLK_ESCAPE, "quit");
+  InputHandler::setKey(SDLK_w, "move forward");
+  InputHandler::setKey(SDLK_a, "move left");
+  InputHandler::setKey(SDLK_s, "move back");
+  InputHandler::setKey(SDLK_d, "move right");
+  InputHandler::setKey(SDLK_r, "move up");
+  InputHandler::setKey(SDLK_f, "move down");
 }
 
 int Game::run() {
@@ -139,6 +145,18 @@ void Game::handleEvents() {
 
 void Game::handleInput() {
   static InputEvent& quit = InputHandler::event("quit");
+  static InputEvent& fwd = InputHandler::event("move forward");
+  static InputEvent& left = InputHandler::event("move left");
+  static InputEvent& right = InputHandler::event("move right");
+  static InputEvent& back = InputHandler::event("move back");
+  static InputEvent& up = InputHandler::event("move up");
+  static InputEvent& down = InputHandler::event("move down");
+  float dx = (-left.down + right.down) * dt;
+  float dy = (-back.down + fwd.down) * dt;
+  float dz = (-down.down + up.down) * dt;
+  dx *= 10; dy *= 10; dz *= 10;
+  m_player->move(dx, dy, dz);
+
   if(quit.pressed)
     m_running = false;
 }

@@ -6,7 +6,7 @@
 class Player : public Camera {
 public:
   Player();
-  void move(float dx, float dy);
+  void move(float dx, float dy, float dz);
   void rotate(float x, float y);
 private:
   float m_theta, m_phi;
