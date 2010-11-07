@@ -10,7 +10,22 @@ RenderContext::RenderContext(Scene& scene) : m_scene(scene) {
 }
 
 void RenderContext::pushLights(Camera& camera) {
+  glEnable(GL_LIGHTING);
+  GLfloat lightC[] = { 0.2, 0.4, 0.6, 1.0};
+  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lightC);
+  glLightfv(GL_LIGHT0, GL_AMBIENT, lightC);
 
+  glEnable(GL_LIGHT0);
+  GLfloat ambC[] = { 0.0, 0.0, 1.0, 1.0};
+  GLfloat specC[] = { 1.0, 0.0, 0.0, 1.0};
+  GLfloat diffC[] = { 0.0, 1.0, 0.0, 1.0};
+  glLightfv(GL_LIGHT0, GL_AMBIENT, ambC);
+  glLightfv(GL_LIGHT0, GL_SPECULAR, specC);
+  glLightfv(GL_LIGHT0, GL_DIFFUSE, diffC);
+  glLightfv(GL_LIGHT0, GL_POSITION, camera.pos().m_floats);
+//  glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 35.0f);
+  glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, camera.front().normalized().m_floats);
+  glMateriali(GL_FRONT, GL_SHININESS, 128);
 }
 
 void RenderContext::renderObjects(Camera& camera) {
@@ -26,7 +41,7 @@ void RenderContext::renderObjects(Camera& camera) {
 }
 
 void RenderContext::popLights() {
-
+	glDisable(GL_LIGHTING);
 }
 
 // FIXME: use grid

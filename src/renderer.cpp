@@ -99,7 +99,7 @@ SceneRenderPass::SceneRenderPass() : m_clear(0) {}
 SceneRenderPass::~SceneRenderPass() {}
 
 void SceneRenderPass::render(RenderContext& r) {
-  beginFBO();
+  beginFBO();  
 
   m_viewport->prepare(width(), height());
   glClearColor(0.1, 0.4, 0.7, 0.8);
@@ -111,6 +111,8 @@ void SceneRenderPass::render(RenderContext& r) {
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
   glShadeModel(GL_SMOOTH);
+
+
 
   r.pushLights(*m_viewport);
   r.renderObjects(*m_viewport);

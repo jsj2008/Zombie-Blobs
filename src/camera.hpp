@@ -24,10 +24,10 @@ public:
   float far() const { return m_far; }
 
   /// @todo
-  btVector3 pos() const { return btVector3(0, 0, 0); }
-  btVector3 front() const { return btVector3(0, 0, 1); }
+  btVector3 pos() const { return m_center; }
+  btVector3 front() const { return m_eye - m_center; }
   btVector3 right() const { return btVector3(1, 0, 0); }
-  btVector3 up() const { return btVector3(0, 1, 0); }
+  btVector3 up() const { return m_up; }
 
 protected:
   Type m_type;
