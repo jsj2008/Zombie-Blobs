@@ -1,6 +1,7 @@
 #include "level.hpp"
 
 #include <cassert>
+#include <cmath>
 #include <string>
 
 #include "utils.hpp"
@@ -35,7 +36,9 @@ void Level::render(RenderContext &r, bool bind_shader) {
   static GLuint m_vbo = 0;
   if (m_vbo == 0) {
     for (int i=0; i < m_verts.size(); ++i) {
-      m_verts[i].setW(1); m_normals[i].setW(1);
+      m_verts[i].setW(1);
+      m_normals[i] *= -1; // make normals point to interior
+      m_normals[i].setW(1);
     }
     glGenBuffers(1, &m_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
@@ -44,6 +47,7 @@ void Level::render(RenderContext &r, bool bind_shader) {
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(btVector3)*m_verts.size(), sizeof(btVector3)*m_verts.size(), &m_normals[0]);
   }
 
+//	glDisable(GL_CULL_FACE);
 	// we want the surface inside out
   glFrontFace(GL_CW);
 
@@ -67,7 +71,7 @@ void Level::render(RenderContext &r, bool bind_shader) {
   }
   glEnd();
 #endif
-  /*
+	/*
   glBegin(GL_LINES);
   for (int i=0; i< m_verts.size(); ++i) {
     glVertex3f(m_verts[i].x(), m_verts[i].y(), m_verts[i].z());
@@ -75,8 +79,7 @@ void Level::render(RenderContext &r, bool bind_shader) {
     glVertex3f(e.x(), e.y(), e.z());
   }
   glEnd();
-  */
-
+	*/
   glFrontFace(GL_CCW);
   /*
   for (int i=0; i < m_heightMap.m_height-1; ++i) {

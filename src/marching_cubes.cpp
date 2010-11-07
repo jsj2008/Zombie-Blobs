@@ -429,36 +429,37 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
                         std::vector<btVector3>& verts, std::vector<btVector3>& normals)
 {
 
-  float threshold = 2.5f;
+  float threshold = 1.5f;
   int step = 1.0f;
 
-  int sz = width*height*16;
+  const int depth = 50;
+  int sz = width*height*depth;
   float * voxels = new float[sz];
 
   Log::info("Generating voxel data");
   for (int y=0; y < height; ++y) {
     for (int x=0; x < width; ++x) {
-      for (int z=5; z <= 5; ++z) {
+      for (int z=10; z <= 10; ++z) {
         float magnitude = data[y * width + x] / 255.0f;
         magnitude = 10*(1 - magnitude*magnitude);
-        for (int dx=-magnitude; dx <= magnitude; ++dx) {
+        int xstart = x-magnitude < 0 ? x : magnitude;
+        int xend = x+magnitude >= width ? width-1-magnitude : magnitude;
+        for (int dx=-xstart; dx <= xend; ++dx) {
           int xi = x+dx;
-          if (xi < 0 || xi >= 2*width)
-            continue;
 
-          for (int dy=-magnitude; dy <= magnitude; ++dy) {
+          int ystart = y-magnitude < 0 ? y : magnitude;
+          int yend = y+magnitude >= height ? height-1-magnitude : magnitude;
+          for (int dy=-ystart; dy <= yend; ++dy) {
             int yi = y+dy;
-            if (yi < 0 || yi >= 2*height)
-              continue;
 
-            for (int dz=-magnitude; dz <= magnitude*8; ++dz) {
+            for (int dz=-magnitude; dz <= magnitude*4; ++dz) {
               int zi = z+dz;
-              if (zi < 0 || zi >= 16)
+              if (zi < 0 || zi >= depth)
                 continue;
 
-              float fakedz = dz < 0 ? dz : dz/8.0f;
+              float fakedz = dz < 0 ? dz : dz/4.0f;
               float length2 = btVector3(dx, dy, fakedz).length2();
-//							length2 = fabs(dx) + fabs(dy) + fabs(fakedz);
+              //							length2 = fabs(dx) + fabs(dy) + fabs(fakedz);
               float m = std::max(1 - length2/magnitude, 0.0f);
               m *= m*m;
 
@@ -470,23 +471,22 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
     }
   }
 
-
-  float maxim = *std::max_element(voxels, voxels + width*height*16);
+  float maxim = *std::max_element(voxels, voxels + width*height*depth);
   Log::info("max: %f", maxim);
-  uint8_t * tmp = new uint8_t[width*height*16];
-  for (int i=0; i < width*height*16; ++i) {
+  uint8_t * tmp = new uint8_t[width*height*depth];
+  for (int i=0; i < width*height*depth; ++i) {
     tmp[i] = (255 * voxels[i])/maxim;
   }
 
   FILE* fp = fopen("terrain.raw", "w+");
-  fwrite(tmp, width*height*16, 1, fp);
+  fwrite(tmp, width*height*depth, 1, fp);
   fclose(fp);
   delete[] tmp;
 
   for (int y=1; y < height-1; y++) {
     for (int x=1; x < width-1; x++ ) {
-      for (int z=1; z < 16; ++z) {
-        vMarchCube(voxels, width, height, 16, verts, normals, x, y, z, 1, threshold);
+      for (int z=1; z < depth-1; ++z) {
+        vMarchCube(voxels, width, height, depth, verts, normals, x, y, z, 1, threshold);
       }
     }
     if (y % 10 == 0) Log::info("Marching slice %d", y);
@@ -495,42 +495,77 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
   /// the normal calculation doesn't represent this version anymore, so just calculate plane normals
   normals.reserve(verts.size());
   Log::info("Calculating normals");
-#if 1
+#if 0
   for (unsigned int i=0; i < verts.size(); i+=3) {
     btVector3 & v1 = verts[i];
     btVector3 & v2 = verts[i+1];
     btVector3 & v3 = verts[i+2];
-    btVector3 n = (v3-v1).cross(v2-v1).normalize();
+    btVector3 n = (v2-v1).cross(v3-v1).normalize();
     normals.insert(normals.end(), 3, n);
   }
 #else
-  const int max_rad = 5;
-
+  const int max_rad = 11;
   // try to calculate normals from scalar field gradient
-  for (int i=0; i<verts.size(); ++i) {
+  for (int i=0; i<verts.size(); ++i) {		
     btVector3 & v = verts[i];
     btVector3 grad(0, 0, 0);
-    int x = v.x(); int y = v.y(); int z = v.z();
+    int x = v.x()+0.5; int y = v.y()+0.5; int z = v.z()+0.5;
+    if (i % 100000 == 0)
+      Log::info("%f %f %f", v.x(), v.y(), v.z());
+    float dz = v.z()-10; if (dz > 0) dz /= 8;
     for (int dx=-max_rad; dx <= max_rad; ++dx) {
+      int xi = x+dx;
+      if (xi < 0 || xi >= width) continue;
       for (int dy=-max_rad; dy <= max_rad; ++dy) {
-        float magnitude = data[(y+dy) * width + (x+dx)] / 255.0f;
-        magnitude = 5*(1 - magnitude);
-        if (magnitude < 0)
-          continue;
-        for (int dz=-magnitude; dz < magnitude; ++dz) {
-          float length2 = (v-btVector3(y+dy, x+dx, z+dz)).length2();
-          float mult = magnitude;
-          mult *= mult*mult; // r6
-          mult = 1/mult;
-          mult *= std::pow(-magnitude+length2, 2);
-          grad += mult*v;
-        }
+        int yi = y+dy; 
+        if (yi < 0 || yi >= height) continue;
+        float magnitude = data[yi*width + xi] / 255.0f;
+        magnitude = 10*(1 - magnitude * magnitude);
+        float dx_ = dx+(v.x() - x);
+        float dy_ = dy+(v.y() - y);
+        float length2 = btVector3(dx_, dy_, dz).length2();
+        if (length2 > magnitude) continue;
+        float up = dx_*dx_ + dy_*dy_ + dz*dz - magnitude;
+        up *= up;
+        float r6 = magnitude;
+        r6 *= r6*r6;
+        up /= -r6;
+
+        btVector3 n = up * btVector3(dx_, dy_, dz);
+        grad += n;
       }
     }
-    grad *= -6;
-    normals.push_back(grad.normalize());
+    // if error 
+    if (grad.isZero()) {
+      /*
+         btVector3 & v2 = verts[i+1];
+         btVector3 & v3 = verts[i+2];
+         grad = (v2-v).cross(v3-v).normalize();
+         */
+    } else {
+      //		  grad *= -6;
+      grad.normalize();
+    }
+    normals.push_back(grad);
   }
 #endif
+  std::vector<btVector3> valid_verts;
+  std::vector<btVector3> valid_normals;
+  for (int i=0; i < verts.size(); i += 3) {
+    if (std::isfinite(verts[i].x()) &&
+        std::isfinite(verts[i+1].x()) &&
+        std::isfinite(verts[i+2].x())) {
+      valid_verts.insert(valid_verts.end(),
+          verts.begin()+i, verts.begin()+i+3);
+      valid_normals.insert(valid_normals.end(),
+          normals.begin()+i, normals.begin()+i+3);
+    }
+
+  }
+  verts.swap(valid_verts);
+	normals.swap(valid_normals);
+
+
   delete[] voxels;
   Log::info("Marching done");
   return true;
