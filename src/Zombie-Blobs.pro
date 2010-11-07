@@ -27,7 +27,8 @@ SOURCES += \
     render_context.cpp \
     grid.cpp \
     tga_image.cpp \
-    physics.cpp
+    physics.cpp \
+    marching_cubes.cpp
 
 HEADERS += \
     game.hpp \
@@ -57,7 +58,8 @@ HEADERS += \
     render_context.hpp \
     grid.hpp \
     tga_image.h \
-    physics.hpp
+    physics.hpp \
+    marching_cubes.hpp
 
 CONFIG += link_pkgconfig
 PKGCONFIG += sdl
