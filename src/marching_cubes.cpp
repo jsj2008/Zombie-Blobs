@@ -470,6 +470,19 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
     }
   }
 
+
+  float maxim = *std::max_element(voxels, voxels + width*height*16);
+  Log::info("max: %f", maxim);
+  uint8_t * tmp = new uint8_t[width*height*16];
+  for (int i=0; i < width*height*16; ++i) {
+    tmp[i] = (255 * voxels[i])/maxim;
+  }
+
+  FILE* fp = fopen("terrain.raw", "w+");
+  fwrite(tmp, width*height*16, 1, fp);
+  fclose(fp);
+  delete[] tmp;
+
   for (int y=1; y < height-1; y++) {
     for (int x=1; x < width-1; x++ ) {
       for (int z=1; z < 16; ++z) {
@@ -518,7 +531,7 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
     normals.push_back(grad.normalize());
   }
 #endif
-  delete voxels;
+  delete[] voxels;
   Log::info("Marching done");
   return true;
 }
