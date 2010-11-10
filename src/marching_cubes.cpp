@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 
 
 MarchingCubes::MarchingCubes()
@@ -342,7 +343,7 @@ static float fGetOffset(float fValue1, float fValue2, float fValueDesired)
         return (fValueDesired - fValue1)/fDelta;
 }
 
-static int vMarchCube(float* data, int w, int h, int d, std::vector<btVector3>& verts, std::vector<btVector3>& normals, float fX, float fY, float fZ, int fScale, float targetValue)
+static int vMarchCube(float* data, int w, int h, int d, std::vector<btVector3>& verts, std::vector<btVector3>& normals, int fX, int fY, int fZ, int fScale, float targetValue)
 {
 	/*
         extern int aiCubeEdgeFlags[256];
@@ -352,7 +353,7 @@ static int vMarchCube(float* data, int w, int h, int d, std::vector<btVector3>& 
         float fOffset;
         float afCubeValue[8];
         float asEdgeVertex[12][3];
-        float asEdgeNorm[12][3];
+        //float asEdgeNorm[12][3];
 
         //Make a local copy of the values at the cube's corners
         for(iVertex = 0; iVertex < 8; iVertex++)
@@ -360,7 +361,10 @@ static int vMarchCube(float* data, int w, int h, int d, std::vector<btVector3>& 
                 int x = fX + a2fVertexOffset[iVertex][0] * fScale;
                 int y = fY + a2fVertexOffset[iVertex][1] * fScale;
                 int z = fZ + a2fVertexOffset[iVertex][2] * fScale;
-                afCubeValue[iVertex] = data[z*w*h + y*w + x];
+                int idx = z*w*h + y*w + x;
+                assert(idx >= 0 && idx < w*h*d);
+                afCubeValue[iVertex] = data[idx];
+                assert(std::isfinite(afCubeValue[iVertex]));
         }
 
         //Find which vertices are inside of the surface and which are outside
@@ -417,7 +421,7 @@ static int vMarchCube(float* data, int w, int h, int d, std::vector<btVector3>& 
                 for(iCorner = 0; iCorner < 3; iCorner++)
                 {
                         iVertex = a2iTriangleConnectionTable[iFlagIndex][3*iTriangle+iCorner];
-                        btVector3 v(asEdgeVertex[iVertex][0], asEdgeVertex[iVertex][1], asEdgeVertex[iVertex][2]);
+                        btVector3 v(asEdgeVertex[iVertex][0], asEdgeVertex[iVertex][1], asEdgeVertex[iVertex][2]);                        
                         verts.push_back(v);
                 }
         }
@@ -435,12 +439,13 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
   const int depth = 50;
   int sz = width*height*depth;
   float * voxels = new float[sz];
+  memset(voxels, 0, sz);
 
   Log::info("Generating voxel data");
   for (int y=0; y < height; ++y) {
     for (int x=0; x < width; ++x) {
       for (int z=10; z <= 10; ++z) {
-        float magnitude = data[y * width + x] / 255.0f;
+        float magnitude = 0.01f + data[y * width + x] / 255.0f;
         magnitude = 10*(1 - magnitude*magnitude);
         int xstart = x-magnitude < 0 ? x : magnitude;
         int xend = x+magnitude >= width ? width-1-magnitude : magnitude;
@@ -458,10 +463,13 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
                 continue;
 
               float fakedz = dz < 0 ? dz : dz/4.0f;
+
               float length2 = btVector3(dx, dy, fakedz).length2();
+              assert(std::isfinite(length2));
               //							length2 = fabs(dx) + fabs(dy) + fabs(fakedz);
               float m = std::max(1 - length2/magnitude, 0.0f);
               m *= m*m;
+              assert(std::isfinite(m));
 
               voxels[zi*width*height + yi*width + xi] += m;
             }
@@ -489,7 +497,7 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
         vMarchCube(voxels, width, height, depth, verts, normals, x, y, z, 1, threshold);
       }
     }
-    if (y % 10 == 0) Log::info("Marching slice %d", y);
+    if (y % 100 == 0) Log::info("Marching slice %d", y);
   }
 
   /// the normal calculation doesn't represent this version anymore, so just calculate plane normals
@@ -536,35 +544,11 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
       }
     }
     // if error 
-    if (grad.isZero()) {
-      /*
-         btVector3 & v2 = verts[i+1];
-         btVector3 & v3 = verts[i+2];
-         grad = (v2-v).cross(v3-v).normalize();
-         */
-    } else {
-      //		  grad *= -6;
-      grad.normalize();
-    }
+    assert(!grad.isZero());
+    grad.normalize();
     normals.push_back(grad);
   }
 #endif
-  std::vector<btVector3> valid_verts;
-  std::vector<btVector3> valid_normals;
-  for (int i=0; i < verts.size(); i += 3) {
-    if (std::isfinite(verts[i].x()) &&
-        std::isfinite(verts[i+1].x()) &&
-        std::isfinite(verts[i+2].x())) {
-      valid_verts.insert(valid_verts.end(),
-          verts.begin()+i, verts.begin()+i+3);
-      valid_normals.insert(valid_normals.end(),
-          normals.begin()+i, normals.begin()+i+3);
-    }
-
-  }
-  verts.swap(valid_verts);
-	normals.swap(valid_normals);
-
 
   delete[] voxels;
   Log::info("Marching done");
