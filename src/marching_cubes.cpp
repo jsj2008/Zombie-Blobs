@@ -503,7 +503,7 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
   /// the normal calculation doesn't represent this version anymore, so just calculate plane normals
   normals.reserve(verts.size());
   Log::info("Calculating normals");
-#if 0
+#if 1
   for (unsigned int i=0; i < verts.size(); i+=3) {
     btVector3 & v1 = verts[i];
     btVector3 & v2 = verts[i+1];
@@ -520,14 +520,14 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
     int x = v.x()+0.5; int y = v.y()+0.5; int z = v.z()+0.5;
     if (i % 100000 == 0)
       Log::info("%f %f %f", v.x(), v.y(), v.z());
-    float dz = v.z()-10; if (dz > 0) dz /= 8;
+    float dz = v.z()-10; if (dz > 0) dz /= 4;
     for (int dx=-max_rad; dx <= max_rad; ++dx) {
       int xi = x+dx;
       if (xi < 0 || xi >= width) continue;
       for (int dy=-max_rad; dy <= max_rad; ++dy) {
         int yi = y+dy; 
         if (yi < 0 || yi >= height) continue;
-        float magnitude = data[yi*width + xi] / 255.0f;
+        float magnitude = 0.01f + data[yi*width + xi] / 255.0f;
         magnitude = 10*(1 - magnitude * magnitude);
         float dx_ = dx+(v.x() - x);
         float dy_ = dy+(v.y() - y);
@@ -544,7 +544,7 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
       }
     }
     // if error 
-    assert(!grad.isZero());
+    //assert(!grad.isZero());
     grad.normalize();
     normals.push_back(grad);
   }
