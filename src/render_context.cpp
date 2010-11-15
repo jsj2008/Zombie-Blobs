@@ -16,26 +16,26 @@ void RenderContext::pushLights(Camera& camera) {
   glLightfv(GL_LIGHT0, GL_AMBIENT, lightC);
 
   glEnable(GL_LIGHT0);
-  GLfloat ambC[] = { 0.0, 0.0, 1.0, 1.0};
-  GLfloat specC[] = { 1.0, 0.0, 0.0, 1.0};
+  GLfloat ambC[] = { 1.0, 0.0, 0.0, 1.0};
+  GLfloat specC[] = { 1.0, 1.0, 0.0, 1.0};
   GLfloat diffC[] = { 0.0, 1.0, 0.0, 1.0};
   glLightfv(GL_LIGHT0, GL_AMBIENT, ambC);
   glLightfv(GL_LIGHT0, GL_SPECULAR, specC);
   glLightfv(GL_LIGHT0, GL_DIFFUSE, diffC);
-  glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 0.5f);
-  glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.0f);
-  glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.001f);
+  glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 0.2f);
+  glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.000f);
+  glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.005f);
 
   btVector3 pos = camera.pos();
-  pos.setW(1.0f);
+  pos.setW(0.0f);
   glLightfv(GL_LIGHT0, GL_POSITION, pos);
-  /*
+	glEnable(GL_COLOR_MATERIAL);
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+  glMateriali(GL_FRONT, GL_SHININESS, 512);
   glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 35.0f);
   btVector3 dir = camera.front().normalized();
   dir.setW(1.0f);
   glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, dir);
-  glMateriali(GL_FRONT, GL_SHININESS, 128);
-  */
 }
 
 void RenderContext::renderObjects(Camera& camera) {

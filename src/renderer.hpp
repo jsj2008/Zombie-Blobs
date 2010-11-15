@@ -7,6 +7,7 @@
 
 #include <set>
 #include <map>
+#include <vector>
 
 /**
  * Render pass represents one renderable image that might only be a small part
@@ -42,7 +43,9 @@ protected:
   int m_width, m_height; /// Output size
 
   FBOPtr m_fbo;
-  FBOImagePtr m_depth, m_color;
+  FBOImagePtr m_depth;
+  typedef std::vector<FBOImagePtr> FBOImageList;
+  FBOImageList m_colors;
 
   CameraPtr m_viewport;
   friend class Renderer;

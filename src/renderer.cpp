@@ -19,13 +19,19 @@ int RenderPass::height() const {
 }
 
 void RenderPass::beginFBO() {
-  if (!m_depth && !m_color)
+  if (!m_depth && m_colors.empty())
     return;
 
   if (!m_fbo) {
     m_fbo.reset(new FrameBufferObject);
     if (m_depth) m_fbo->set(GL_DEPTH_ATTACHMENT, m_depth);
-    if (m_color) m_fbo->set(GL_COLOR_ATTACHMENT0 + 0, m_color);
+    FBOImageList::iterator it = m_colors.begin();
+    int i=0;
+    while (it != m_colors.end()) {
+      m_fbo->set(GL_COLOR_ATTACHMENT0 + i++, *it);
+      ++it;
+    }
+    //if (m_color) m_fbo->set(GL_COLOR_ATTACHMENT0 + 0, m_color);
   }
 
   m_fbo->resize(width(), height());
@@ -65,9 +71,12 @@ void PostProc::render(RenderContext& r) {
     int unit = r.reserveTexUnit();
     tex->bind(unit);
 
-    if (m_shader.isLinked())
-      m_shader.setUniform(it->first, unit);
+    if (!m_shader.isLinked())
+      continue;
+
+    m_shader.setUniform(it->first, unit);
   }
+
   glBegin(GL_QUADS);
 
   glTexCoord2f(0.0f, 0.0f);
@@ -150,7 +159,9 @@ void Renderer::setupPasses() {
   SceneRenderPass* scene = new SceneRenderPass;
   scene->setClearBits(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
   TexturePtr tex(new Texture());
-  scene->m_color = tex;
+  TexturePtr normals(new Texture());
+  scene->m_colors.push_back(tex);
+  scene->m_colors.push_back(normals);
   TexturePtr depth(new Texture());
 
   scene->m_depth = depth;
@@ -158,6 +169,7 @@ void Renderer::setupPasses() {
   PostProc* post = new PostProc();
   post->m_in["scene"] = tex;
   post->m_in["sceneDepth"] = depth;
+  post->m_in["normals"] = normals;
   if (!post->m_shader.addShader("postproc.fs", Shader::Fragment))
     Log::error("could not load postproc shader postproc.fs");
 

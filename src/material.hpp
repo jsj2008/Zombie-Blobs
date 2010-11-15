@@ -9,7 +9,7 @@ public:
   void bind(RenderContext& r, Renderable& obj, bool bind_shader);
 
   GLProgram* shader() { return m_shader; }
-
+  void setShader(GLProgram * shader) { m_shader = shader; }
 private:
   GLProgram* m_shader;
 };

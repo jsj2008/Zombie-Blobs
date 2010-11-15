@@ -1,5 +1,6 @@
 #include "entity.hpp"
 #include "material.hpp"
+#include "utils.hpp"
 
 Renderable::Renderable() : m_material(0) {}
 Renderable::~Renderable() {}

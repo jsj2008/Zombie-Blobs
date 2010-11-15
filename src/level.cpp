@@ -7,8 +7,9 @@
 #include "utils.hpp"
 #include "forward.hpp"
 #include "opengl.hpp"
-
+#include "material.hpp"
 #include "marching_cubes.hpp"
+#include "shader.hpp"
 
 Level::Level() : m_vbo(0) {
   load();
@@ -16,6 +17,11 @@ Level::Level() : m_vbo(0) {
 
 void Level::load() {
   assert( m_heightMap.load(std::string("map.tga")) );
+  m_material = new Material();
+  GLProgram * program = new GLProgram();
+  program->addShader("level.vs", Shader::Vertex);
+  program->addShader("level.fs", Shader::Fragment);
+  m_material->setShader(program);
 }
 
 
@@ -30,7 +36,9 @@ void Level::update(float dt) {
 
 
 void Level::render(RenderContext &r, bool bind_shader) {
-  glColor4f(0.5, 1, 0.3, 0.9);  
+  Entity::render(r, bind_shader);
+
+  glColor4f(0.5, 0.4, 0.3, 0.9);
   float s = 1;
 
   static GLuint m_vbo = 0;
@@ -47,7 +55,7 @@ void Level::render(RenderContext &r, bool bind_shader) {
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(btVector3)*m_verts.size(), sizeof(btVector3)*m_verts.size(), &m_normals[0]);
   }
 
-//	glDisable(GL_CULL_FACE);
+  //glDisable(GL_CULL_FACE);
 	// we want the surface inside out
   glFrontFace(GL_CW);
 
@@ -61,7 +69,6 @@ void Level::render(RenderContext &r, bool bind_shader) {
   glDisableClientState(GL_VERTEX_ARRAY);
   glDisableClientState(GL_NORMAL_ARRAY);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 
 #if 0
   glBegin(GL_TRIANGLES);
