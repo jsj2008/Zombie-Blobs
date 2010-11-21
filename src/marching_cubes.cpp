@@ -440,39 +440,45 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
   const int depth = 50;
   int sz = width*height*depth;
   float * voxels = new float[sz];
-  memset(voxels, 0, sz);
+  //memset(voxels, 0, sz);
 
-  Log::info("Generating voxel data");
-  for (int y=0; y < height; ++y) {
-    for (int x=0; x < width; ++x) {
-      for (int z=10; z <= 10; ++z) {
-        float magnitude = 0.01f + data[y * width + x] / 255.0f;
-        magnitude = 10*(1 - magnitude);
-        int xstart = x-magnitude < 0 ? x : magnitude;
-        int xend = x+magnitude >= width ? width-1-magnitude : magnitude;
-        for (int dx=-xstart; dx <= xend; ++dx) {
-          int xi = x+dx;
+
+  {
+    Log::info("Generating voxel data");
+    for (int y=0; y < height; ++y) {
+      for (int x=0; x < width; ++x) {
+        for (int z=10; z <= 10; ++z) {
+          float magnitude = 0.01f + data[y * width + x] / 255.0f;
+          magnitude = 10*(1 - magnitude);
+          int xstart = x-magnitude < 0 ? x : magnitude;
+          int xend = x+magnitude >= width ? width-1-x : magnitude;
 
           int ystart = y-magnitude < 0 ? y : magnitude;
-          int yend = y+magnitude >= height ? height-1-magnitude : magnitude;
-          for (int dy=-ystart; dy <= yend; ++dy) {
-            int yi = y+dy;
+          int yend = y+magnitude >= height ? height-1-y : magnitude;
 
-            for (int dz=-magnitude; dz <= 4*magnitude; ++dz) {
-              int zi = z+dz;
-              if (zi < 0 || zi >= depth)
-                continue;
+          int zstart = z-magnitude < 0 ? z : magnitude;
+          int zend = z+4*magnitude >= depth ? depth-1-z : 4*magnitude;
 
-              float fakedz = dz < 0 ? dz : dz/4.0f;
+          for (int dx=-xstart; dx <= xend; ++dx) {
+            int xi = x+dx;
 
-              float length2 = btVector3(dx, dy, fakedz).length2();
-              assert(std::isfinite(length2));
-              //							length2 = fabs(dx) + fabs(dy) + fabs(fakedz);
-              float m = std::max(1 - length2/magnitude, 0.0f);
-              m *= m*m;
-              assert(std::isfinite(m));
+            for (int dy=-ystart; dy <= yend; ++dy) {
+              int yi = y+dy;
 
-              voxels[zi*width*height + yi*width + xi] += m;
+              for (int dz=-zstart; dz <= zend; ++dz) {
+                int zi = z+dz;
+
+                float fakedz = dz < 0 ? dz : dz/8.0f;
+
+                float length2 = btVector3(dx, dy, fakedz).length2();
+                assert(std::isfinite(length2));
+                float m = 1 - length2/magnitude;
+                if (m <= 0)
+                  continue;
+                m *= m*m;
+                assert(std::isfinite(m));
+                voxels[zi*width*height + yi*width + xi] += m;
+              }
             }
           }
         }
@@ -480,17 +486,25 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
     }
   }
 
-  float maxim = *std::max_element(voxels, voxels + width*height*depth);
-  Log::info("max: %f", maxim);
-  uint8_t * tmp = new uint8_t[width*height*depth];
-  for (int i=0; i < width*height*depth; ++i) {
-    tmp[i] = (255 * voxels[i])/maxim;
-  }
 
-  FILE* fp = fopen("terrain.raw", "w+");
-  fwrite(tmp, width*height*depth, 1, fp);
+
+	{
+    float maxim = *std::max_element(voxels, voxels + width*height*depth);
+    Log::info("max: %f", maxim);
+    uint8_t * tmp = new uint8_t[width*height*depth];
+    for (int i=0; i < width*height*depth; ++i) {
+      tmp[i] = (255 * voxels[i])/maxim;
+    }
+    FILE* fp = fopen("terrain.raw", "w+");
+    fwrite(voxels, sizeof(float), width*height*depth, fp);
+    fclose(fp);
+    delete[] tmp;
+	}
+	{
+	FILE* fp = fopen("map.raw", "w+");
+  fwrite(data, width*height, 1, fp);
   fclose(fp);
-  delete[] tmp;
+	}
 
   for (int y=1; y < height-1; y++) {
     for (int x=1; x < width-1; x++ ) {
@@ -504,7 +518,7 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
   /// the normal calculation doesn't represent this version anymore, so just calculate plane normals
   normals.reserve(verts.size());
   Log::info("Calculating normals");
-#if 0
+#if 1
   for (unsigned int i=0; i < verts.size(); i+=3) {
     btVector3 & v1 = verts[i];
     btVector3 & v2 = verts[i+1];
@@ -513,7 +527,7 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
     normals.insert(normals.end(), 3, n);
   }
 #else
-  const int max_rad = 12;
+  const int max_rad = 11;
   // try to calculate normals from scalar field gradient
   for (int i=0; i<verts.size(); ++i) {		
     btVector3 & v = verts[i];
@@ -522,7 +536,7 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
     if (i % 100000 == 0)
       Log::info("%f %f %f", v.x(), v.y(), v.z());
     float dz = v.z() - 10.0;
-    float dz_ = dz > 0 ? dz / 4.0f : dz;
+    float dz_ = dz > 0 ? dz / 8.0f : dz;
     //if (dz > 0) dz /= 4;
     for (int dx=-max_rad; dx <= max_rad; ++dx) {
       int xi = x+dx;
@@ -535,7 +549,7 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
         float dx_ = dx+(v.x() - x);
         float dy_ = dy+(v.y() - y);
         float length2 = btVector3(dx_, dy_, dz_).length2();
-        //if (length2 > magnitude) continue;
+        if (length2 > magnitude) continue;
         float up;
         if (dz >= 0) {
           up = length2/magnitude;

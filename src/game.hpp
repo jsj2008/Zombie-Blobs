@@ -33,6 +33,7 @@ public:
   static Game* instance() { return s_instance; }
   PlayerPtr player() { return m_player; }
   LevelPtr level() { return m_level; }
+  PhysicsPtr physics() { return m_physics; }
 private:
   typedef std::list<CameraPtr> Cameras;
 
@@ -46,7 +47,7 @@ private:
   int m_game_state;
   bool m_running;
 
-  std::shared_ptr<Physics> m_physics;
+  PhysicsPtr m_physics;
 
   Renderer m_renderer;
   Cameras m_cameras;

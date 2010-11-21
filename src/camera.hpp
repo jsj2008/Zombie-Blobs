@@ -22,10 +22,19 @@ public:
   float fov() const { return m_fov; }
   float near() const { return m_near; }
   float far() const { return m_far; }
+  void setFar(float far) { m_far = far; }
+  void setNear(float near) { m_near = near; }
+
+  void moveTo(btVector3 pos, bool preserve_look_dir=false) {
+    btVector3 diff = m_center - m_eye;
+    m_eye = pos;
+    if (!preserve_look_dir)
+      m_center = m_eye + diff;
+  }
 
   /// @todo
-  btVector3 pos() const { return m_center; }
-  btVector3 front() const { return m_eye - m_center; }
+  btVector3 pos() const { return m_eye; }
+  btVector3 front() const { return m_center - m_eye; }
   btVector3 right() const { return btVector3(1, 0, 0); }
   btVector3 up() const { return m_up; }
 

@@ -9,6 +9,9 @@ TGAImage::TGAImage() :
     m_data(0), m_width(0), m_height(0) {
 }
 
+uint8_t TGAImage::get(int x, int y) {
+  return m_data[y * m_width + x];
+}
 
 bool TGAImage::load(const std::string & from) {
   std::string filename = ResourceManager::find(from);

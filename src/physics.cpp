@@ -21,12 +21,29 @@ void Physics::init() {
   // The world.
   m_world = new btSoftRigidDynamicsWorld(dispatcher, m_broadphase, solver, collisionConfiguration);
   btSoftBodyWorldInfo & softWorldInfo = m_world->getWorldInfo();
-  softWorldInfo.m_gravity.setValue(0, -10, 0);
+  softWorldInfo.m_gravity.setValue(0, 0, -10);
   softWorldInfo.m_sparsesdf.Initialize();
-  m_world->setGravity(btVector3(0,-10,0));
+  m_world->setGravity(btVector3(0, 0, -10));
 }
 
 void Physics::update(float dt) {
   // softWorldInfo.m_sparsesdf.GarbageCollect();
   m_world->stepSimulation(dt*1000, 1);
 }
+
+void Physics::addTrimesh(btVector3 * vertices, int count) {
+  btTriangleMesh* triMesh = new btTriangleMesh();
+  for (int i=0; i < count; i += 3) {
+    triMesh->addTriangle(vertices[i], vertices[i+1], vertices[i+2]);
+  }
+
+  btBvhTriangleMeshShape * shape = new btBvhTriangleMeshShape(triMesh, true);
+
+  btRigidBody * body = new btRigidBody(0, new btDefaultMotionState(), shape);
+  m_world->addRigidBody(body);
+}
+
+void Physics::addRigidBody(btRigidBody *body) {
+  m_world->addRigidBody(body);
+}
+

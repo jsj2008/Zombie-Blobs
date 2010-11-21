@@ -44,6 +44,7 @@ typedef std::shared_ptr<Renderable> RenderablePtr;
 typedef std::shared_ptr<Camera> CameraPtr;
 typedef std::shared_ptr<Player> PlayerPtr;
 typedef std::shared_ptr<Level> LevelPtr;
+typedef std::shared_ptr<Physics> PhysicsPtr;
 
 class btBroadphaseInterface;
 class btSoftRigidDynamicsWorld;

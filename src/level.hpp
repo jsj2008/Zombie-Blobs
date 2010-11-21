@@ -16,6 +16,8 @@ public:
   virtual void update(float dt);
   virtual void render(RenderContext &r, bool bind_shader=true);
 
+  btVector3 playerSpawnPoint();
+
   void load();
   // winning condition
   // random seed

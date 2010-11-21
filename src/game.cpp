@@ -42,6 +42,8 @@ int Game::run() {
   Uint32 previous_ticks = start_ticks;
 
   m_physics->init();
+  m_level->load();
+  m_player->init(m_level->playerSpawnPoint());
 
   while (m_running) {
     Uint32 ticks = SDL_GetTicks();
@@ -55,6 +57,7 @@ int Game::run() {
 
     if ((m_game_state & GAME) && m_scene) {
       m_physics->update(dt);
+      m_player->update();
       m_scene->update(dt);
       m_renderer.render(*m_scene);
       m_overlay.render(m_game_state, dt);
