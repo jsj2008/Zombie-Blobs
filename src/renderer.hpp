@@ -66,6 +66,14 @@ protected:
   friend class Renderer;
 };
 
+class HudRenderPass : public RenderPass {
+public:
+  HudRenderPass();
+  virtual ~HudRenderPass();
+
+  void render(RenderContext &r);
+};
+
 class SceneRenderPass : public RenderPass {
 public:
   SceneRenderPass();

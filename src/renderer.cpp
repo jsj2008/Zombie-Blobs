@@ -130,6 +130,56 @@ void SceneRenderPass::render(RenderContext& r) {
   endFBO();
 }
 
+HudRenderPass::HudRenderPass() : RenderPass() {
+  m_viewport->setRect();
+}
+HudRenderPass::~HudRenderPass() {}
+
+void HudRenderPass::render(RenderContext &r)
+{
+  btVector3 vel = Game::instance()->player()->getVelocity();
+
+  r.push();
+  beginFBO();
+
+  r.disable(GL_DEPTH_TEST);
+  r.disable(GL_LIGHTING);
+
+  m_viewport->prepare(width(), height()); // normalized coords
+
+  // 60 units is one round
+  float speed = (vel.length() / 60) * (2*3.145926) ;
+
+  btVector3 needleBase(0.8, 0.2, 0);
+  float radius = 0.1;
+
+  btVector3 needle[3];
+  float theta = -(3/4.0)*M_PI - speed;
+  needle[0] = radius * btVector3(cos(theta), sin(theta), 0) + needleBase;
+
+  btVector3 diff = needle[0] - needleBase;
+  diff.normalize();
+  diff = diff.rotate(btVector3(0, 0, 1), M_PI_2);
+  diff *= 0.01;
+
+  needle[1] = needleBase + diff;
+  needle[2] = needleBase - diff;
+  for (int i=0; i < 3; ++i) {
+    needle[i].setX(needle[i].x() * width());
+    needle[i].setY(needle[i].y() * height());
+  }
+
+  glColor4f(speed/(2*M_PI), 0, 0, 1);
+
+  glBegin(GL_TRIANGLES);
+  for (int i=0; i<3; ++i)
+    glVertex2fv(needle[i].m_floats);
+  glEnd();
+
+  endFBO();
+  r.pop();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -176,6 +226,9 @@ void Renderer::setupPasses() {
   PlayerPtr player = Game::instance()->player();
   scene->m_viewport = player;
 
+  HudRenderPass * hud = new HudRenderPass();
+
   m_render_passes.push_back(RenderPassPtr(scene));
   m_render_passes.push_back(RenderPassPtr(post));
+  m_render_passes.push_back(RenderPassPtr(hud));
 }

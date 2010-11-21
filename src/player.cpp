@@ -48,3 +48,6 @@ void Player::rotate(float x, float y) {
   m_theta = std::max(-M_PI_2+1e-2, std::min(M_PI_2-1e-2, (double)m_theta));
   m_center = m_eye + btVector3(0, 1, 0).rotate(btVector3(1, 0, 0), m_theta).rotate(btVector3(0, 0, 1), m_phi);
 }
+btVector3 Player::getVelocity() {
+  return m_body->getLinearVelocity();
+}

@@ -13,6 +13,7 @@ public:
   void update();
   void move(float dx, float dy, float dz);
   void rotate(float x, float y);
+  btVector3 getVelocity();
 private:
   float m_theta, m_phi;
   btRigidBody * m_body;
