@@ -72,9 +72,11 @@ void Level::load() {
     fread(&m_verts[0], sizeof(btVector3), count, fp);
     fread(&m_normals[0], sizeof(btVector3), count, fp);
     fclose(fp);
-  }
 
+  }
+  Log::info("Adding level mesh to physics engine");
   Game::instance()->physics()->addTrimesh(&m_verts[0], m_verts.size());
+  Log::info("Done");
 }
 
 
