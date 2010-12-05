@@ -12,6 +12,10 @@ Player::Player() : Camera(), m_theta(0), m_phi(0), m_body(0) {
   setFar(200.0f);
 }
 
+Player::~Player() {
+  delete m_body;
+}
+
 void Player::init(btVector3 pos) {
   moveTo(pos);
 
@@ -37,6 +41,7 @@ void Player::move(float dx, float dy, float dz)
   btVector3 n = dir.normalized();
   btVector3 move = -n * dy + btVector3(-n.y(), n.x(), 0) * dx + btVector3(0, 0, 1) * dz;
 
+  m_body->activate();
   m_body->applyCentralForce(100*move);
 
   m_center += move;

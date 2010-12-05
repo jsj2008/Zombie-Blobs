@@ -4,6 +4,7 @@
 #include <cmath>
 #include <string>
 
+#include "model.hpp"
 #include "utils.hpp"
 #include "forward.hpp"
 #include "opengl.hpp"
@@ -17,6 +18,8 @@ Level::Level() : m_vbo(0) {
 }
 
 void Level::load() {
+  if (!m_verts.empty())
+    return;
   assert( m_heightMap.load(std::string("map.tga")) );
   m_material = new Material();
   GLProgram * program = new GLProgram();
@@ -24,13 +27,21 @@ void Level::load() {
   program->addShader("level.fs", Shader::Fragment);
   m_material->setShader(program);
 
+#if 1
+  m_blobMaterial = new Material();
+  GLProgram * blobProgram = new GLProgram();
+  blobProgram->addShader("blob.vs", Shader::Vertex);
+  blobProgram->addShader("blob.fs", Shader::Fragment);
+  m_blobMaterial->setShader(blobProgram);
+#else
+  m_blobMaterial = 0;
+#endif
   FILE * fp = fopen("level.data", "rb");
   if (!fp) {
     MarchingCubes::triangulateGrid(m_heightMap.m_data, m_heightMap.m_width, m_heightMap.m_height,
                                    m_verts, m_normals);
 
-    btVector3 mins(10000, 10000, 10000);
-    btVector3 maxs(0,0,0);
+    m_bb[0] = m_bb[1] = m_verts[0];
     // make inside vertices CCW order
     for (int i=0; i < m_verts.size(); i+=3) {
       btVector3 tmp = m_verts[i+2];
@@ -39,13 +50,13 @@ void Level::load() {
     }
 
     for (int i=0; i < m_verts.size(); ++i) {
-      mins.setX(std::min(mins.x(), m_verts[i].x()));
-      mins.setY(std::min(mins.y(), m_verts[i].y()));
-      mins.setZ(std::min(mins.z(), m_verts[i].z()));
+      m_bb[0].setX(std::min(m_bb[0].x(), m_verts[i].x()));
+      m_bb[0].setY(std::min(m_bb[0].y(), m_verts[i].y()));
+      m_bb[0].setZ(std::min(m_bb[0].z(), m_verts[i].z()));
 
-      maxs.setX(std::max(maxs.x(), m_verts[i].x()));
-      maxs.setY(std::max(maxs.y(), m_verts[i].y()));
-      maxs.setZ(std::max(maxs.z(), m_verts[i].z()));
+      m_bb[1].setX(std::max(m_bb[1].x(), m_verts[i].x()));
+      m_bb[1].setY(std::max(m_bb[1].y(), m_verts[i].y()));
+      m_bb[1].setZ(std::max(m_bb[1].z(), m_verts[i].z()));
 
 
       m_verts[i].setW(1);
@@ -54,8 +65,8 @@ void Level::load() {
     }
     Log::info("vertices %d, m_normals %d", m_verts.size(), m_normals.size());
     Log::info("bb (%f,%f,%f) -> (%f, %f, %f)",
-              mins.x(), mins.y(), mins.z(),
-              maxs.x(), maxs.y(), maxs.z()
+              m_bb[0].x(), m_bb[0].y(), m_bb[0].z(),
+              m_bb[1].x(), m_bb[1].y(), m_bb[1].z()
               );
 
     fp = fopen("level.data", "w+");
@@ -77,11 +88,38 @@ void Level::load() {
   Log::info("Adding level mesh to physics engine");
   Game::instance()->physics()->addTrimesh(&m_verts[0], m_verts.size());
   Log::info("Done");
+
+  for (int y=0; y < m_heightMap.m_height; ++y) {
+    for (int x=0; x < m_heightMap.m_width; ++x) {
+      if (m_heightMap.get(x, y) == 0)
+        m_blobSpawns.push_back(btVector3(x, y, 10));
+    }
+  }
+  Log::info("%d blob spawn points", m_blobSpawns.size());
 }
 
 
 void Level::update(float dt) {
+  Entity::update(dt);
 
+  m_neighbours.clear();
+
+  for (int i=0; i < m_blobs.size(); ++i) {
+    btVector3 p1 = m_blobs[i]->getModel()->getCollisionObject()->getWorldTransform().getOrigin();
+    btSphereShape * sp1 = dynamic_cast<btSphereShape*>(m_blobs[i]->getModel()->getCollisionObject()->getCollisionShape());
+    float r1 = sp1->getRadius();
+
+    for (int j=i+1; j < m_blobs.size(); ++j) {
+      btSphereShape * sp2 = dynamic_cast<btSphereShape*>(m_blobs[i]->getModel()->getCollisionObject()->getCollisionShape());
+      float r2 = sp2->getRadius();
+      btVector3 p2 = m_blobs[j]->getModel()->getCollisionObject()->getWorldTransform().getOrigin();
+      if ((p2-p1).length() < 2.0f + r1 + r2) {
+        Enemy * e1 = m_blobs[i];
+        Enemy * e2 = m_blobs[j];
+        m_neighbours.insert(std::make_pair(std::min(e1, e2), std::max(e1, e2)));
+      }
+    }
+  }
 }
 
 // just calculate some seemingly nice point in the middle
@@ -104,10 +142,30 @@ btVector3 Level::playerSpawnPoint() {
   return pos;
 }
 
+btVector3 Level::blobSpawnPoint() {
+  return m_blobSpawns[rand() % m_blobSpawns.size()];
+}
+
+void Level::spawnNewEnemy() {
+  Enemy * e = new Enemy();
+  btVector3 pos = blobSpawnPoint();
+
+  e->setMaterial(m_blobMaterial);
+
+  assert ( e->load("blob.obj") );
+  btCollisionObject * col =  e->getModel()->getCollisionObject();
+  btTransform& trans = col->getWorldTransform();
+  trans.setOrigin(pos);
+
+  addChild(RenderablePtr(e));
+  m_blobs.push_back(e);
+  //gameScene->root()->addChild(RenderablePtr(e));
+}
+
+
 void Level::render(RenderContext &r, bool bind_shader) {
   Entity::render(r, bind_shader);
 
-  glColor4f(0.5, 0.4, 0.3, 0.9);
   float s = 1;
 
   static GLuint m_vbo = 0;
@@ -118,8 +176,10 @@ void Level::render(RenderContext &r, bool bind_shader) {
     glBufferData(GL_ARRAY_BUFFER, sizeof(btVector3)*(m_verts.size()+m_normals.size()), NULL, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(btVector3)*m_verts.size(), &m_verts[0]);
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(btVector3)*m_verts.size(), sizeof(btVector3)*m_verts.size(), &m_normals[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
 
+  glColor4f(0.9, 0.4, 0.3, 1.0);
   glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
   glVertexPointer(4, GL_FLOAT, 0, 0);
   glNormalPointer(GL_FLOAT, sizeof(btVector3), (char*)0 + sizeof(btVector3)*m_verts.size());
@@ -131,36 +191,45 @@ void Level::render(RenderContext &r, bool bind_shader) {
   glDisableClientState(GL_NORMAL_ARRAY);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-#if 0
-  glBegin(GL_TRIANGLES);
-  for (int i=0; i< m_verts.size(); ++i) {
-    glNormal3fv((GLfloat*)m_normals[i].m_floats); //m_normals[i].x(), m_normals[i].y(), m_normals[i].z());
-    glVertex3fv((GLfloat*)m_verts[i].m_floats); //m_verts[i].x(), m_verts[i].y(), m_verts[i].z());
-  }
-  glEnd();
-#endif
-	/*
-  glBegin(GL_LINES);
-  for (int i=0; i< m_verts.size(); ++i) {
-    glVertex3f(m_verts[i].x(), m_verts[i].y(), m_verts[i].z());
-    btVector3 e = m_verts[i] + m_normals[i];
-    glVertex3f(e.x(), e.y(), e.z());
-  }
-  glEnd();
-	*/
-  glFrontFace(GL_CCW);
-  /*
-  for (int i=0; i < m_heightMap.m_height-1; ++i) {
-    glBegin(GL_TRIANGLE_STRIP);
-    for (int j=0; j < m_heightMap.m_width; ++j) {
-      glVertex3f(s*(j-m_heightMap.m_width/2),
-                 s*((i+1)-m_heightMap.m_height/2),
-                 -50 + 20*(m_heightMap.m_data[(i+1)*m_heightMap.m_width+j]/255.0));
-      glVertex3f(s*(j-m_heightMap.m_width/2),
-                 s*(i-m_heightMap.m_height/2),
-                 -50 + 20*(m_heightMap.m_data[i*m_heightMap.m_width+j]/255.0));
+
+  glColor4f(0, 1, 0, 1.0);
+  for (EnemyGraph::iterator it = m_neighbours.begin(); it != m_neighbours.end(); ++it) {
+    glBegin(GL_QUAD_STRIP);
+
+    btVector3 f = it->first->getModel()->getCollisionObject()->getWorldTransform().getOrigin();
+    btVector3 t = it->second->getModel()->getCollisionObject()->getWorldTransform().getOrigin();
+
+    btSphereShape * sp1 = dynamic_cast<btSphereShape*>(it->first->getModel()->getCollisionObject()->getCollisionShape());
+    btSphereShape * sp2 = dynamic_cast<btSphereShape*>(it->second->getModel()->getCollisionObject()->getCollisionShape());
+    btScalar r1=sp1->getRadius(), r2=sp2->getRadius();
+
+    float coeff = 1 - ((t-f).length() - r1 - r2)/2.0f;
+    r1 *= coeff; r2 *= coeff;
+
+    btVector3 dir1 = t-f;
+    btVector3 perp = dir1.rotate(btVector3(0, 0, 1), M_PI/2);
+    perp.normalize();
+
+    btVector3 up = perp.cross(dir1).normalized();
+    btVector3 norms[8];
+
+    norms[0] = perp*r1;
+    norms[1] = perp*r2;
+    norms[2] = up*r1;
+    norms[3] = up*r2;
+    norms[4] = -perp*r1;
+    norms[5] = -perp*r2;
+    norms[6] = -up*r1;
+    norms[7] = -up*r2;
+
+    for (int i=0; i < 10; i+=2) {
+      btVector3 norm = norms[i % 8].normalized();
+      glNormal3fv(norm);
+      glVertex3fv(f + norms[i % 8]);
+      glNormal3fv(norm);
+      glVertex3fv(t + norms[(i+1) % 8]);
     }
+
     glEnd();
   }
-  */
 }

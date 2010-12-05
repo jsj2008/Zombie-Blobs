@@ -92,7 +92,7 @@ public:
 
     GLint loc = glRun2(glGetUniformLocation(m_prog, name.c_str()));
     if(loc == -1) {
-      Log::error("Failed to query uniform variable %s location", name.c_str());
+//      Log::error("Failed to query uniform variable %s location", name.c_str());
     } else {
       setUniform(loc, t);
     }

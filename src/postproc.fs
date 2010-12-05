@@ -22,7 +22,7 @@ mat3 rotateNormalVecToAnother(vec3 f, vec3 t) {
 void main()
 {
   vec2 tx = gl_TexCoord[0].st;
-  vec2 px = vec2(1/800.0, 1/600.0);
+  vec2 px = vec2(1/1280.0, 1/800.0);
 
   float depth = mangleDepth(texture2D(sceneDepth, tx).x);
   vec3 norm = normalize(texture2D(normals, tx).rgb);
@@ -51,7 +51,7 @@ void main()
       float zs = sqrt(1 - dx_*dx_ - dy_*dy_);
       vec3 localCoord = vec3(dx*px.x, dy*px.y, 0);
       // just a guess, should sample some constant sized disc in world coords
-      vec2 coord = tx + (10 - 8*depth)*localCoord.xy;
+      vec2 coord = tx + (5 - 4*depth)*localCoord.xy;
       localCoord.z = mangleDepth(texture2D(sceneDepth, coord).x);
       localCoord.z -= depth;
       // now it should really be in local coordinates
@@ -64,6 +64,7 @@ void main()
   }
   hemi = hemi/maxi;
   gl_FragColor = texture2D(scene, tx);
-  //  gl_FragColor.rgb += norm;
+//  gl_FragColor.rgb += norm;
+//  gl_FragColor = vec4(1,1,1,1);
   gl_FragColor.rgb *= hemi;
 }

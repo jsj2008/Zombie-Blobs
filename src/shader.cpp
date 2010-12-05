@@ -95,7 +95,7 @@ bool GLProgram::bind() {
     m_compiled = true;
     /// @todo should we link only when there was a successful compiling?
     link();
-  }
+  }  
   if (isLinked()) {
     glRun(glUseProgram(m_prog));
     return true;

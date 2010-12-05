@@ -21,6 +21,12 @@ Game::Game() : m_scene(0), m_surface(0), m_level(new Level()),
     m_physics(new Physics) {
   assert(!s_instance);
   s_instance = this;
+
+}
+
+bool Game::init()
+{
+
   m_cameras.push_back(m_player);
 
   m_renderer.setupPasses();
@@ -35,15 +41,16 @@ Game::Game() : m_scene(0), m_surface(0), m_level(new Level()),
   InputHandler::setKey(SDLK_d, "move right");
   InputHandler::setKey(SDLK_r, "move up");
   InputHandler::setKey(SDLK_f, "move down");
-}
-
-int Game::run() {
-  Uint32 start_ticks = SDL_GetTicks();
-  Uint32 previous_ticks = start_ticks;
 
   m_physics->init();
   m_level->load();
   m_player->init(m_level->playerSpawnPoint());
+  return true;
+}
+
+int Game::run() {
+  Uint32 start_ticks = SDL_GetTicks();
+  Uint32 previous_ticks = start_ticks; 
 
   while (m_running) {
     Uint32 ticks = SDL_GetTicks();
@@ -64,7 +71,6 @@ int Game::run() {
     }
 
     if (m_game_state & MENU) {
-
 
       // render menu
     }

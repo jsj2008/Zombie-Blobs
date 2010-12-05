@@ -33,6 +33,8 @@ void Physics::update(float dt) {
 
 void Physics::addTrimesh(btVector3 * vertices, int count) {
   btTriangleMesh* triMesh = new btTriangleMesh();
+  triMesh->preallocateVertices(count / 3);
+
   for (int i=0; i < count; i += 3) {
     triMesh->addTriangle(vertices[i], vertices[i+1], vertices[i+2]);
   }

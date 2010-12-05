@@ -577,7 +577,6 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
     normals.push_back(grad);
   }
 #endif
-
   delete[] voxels;
   Log::info("Marching done");
   return true;

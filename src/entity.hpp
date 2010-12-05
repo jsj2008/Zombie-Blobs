@@ -14,12 +14,14 @@ public:
   virtual ~Renderable();
 
   virtual void render(RenderContext& r, bool bind_shader = true) = 0;
-  virtual void update(float dt) = 0;
+  // default implementation calls update on all children
+  virtual void update(float dt);
   Material* material() { return m_material; }
 
 
   Children & getChildren() { return m_children; }
   void addChild(RenderablePtr ch) { m_children.insert(ch); }
+  void setMaterial(Material * m) { m_material = m; }
 protected:
   Material* m_material;
 private:
@@ -31,11 +33,21 @@ public:
   Entity();
   virtual ~Entity();
 
-  void render(RenderContext& r, bool bind_shader = true);
+  virtual void render(RenderContext& r, bool bind_shader = true);
   virtual void update(float dt);
 
-protected:
+  virtual bool load(const std::string& file);
+  Model * getModel() { return m_model; }
+protected:  
   Model* m_model;
+};
+
+class Enemy : public Entity {
+public:
+  Enemy();
+  virtual ~Enemy();
+  virtual void render(RenderContext &r, bool bind_shader = true);
+  virtual void update(float dt);
 };
 
 #endif // ENTITY_HPP

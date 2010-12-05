@@ -4,6 +4,8 @@
 #include "state.hpp"
 #include "render_context.hpp"
 #include "game.hpp"
+#include "level.hpp"
+#include "opengl.hpp"
 
 RenderPass::RenderPass() :
     m_width(0), m_height(0), m_viewport(new Camera()) {
@@ -69,12 +71,16 @@ void PostProc::render(RenderContext& r) {
     TexturePtr tex = it->second;
 
     int unit = r.reserveTexUnit();
+    glCheck("bind");
     tex->bind(unit);
+    glCheck("aftbind");
+
 
     if (!m_shader.isLinked())
       continue;
 
-    m_shader.setUniform(it->first, unit);
+    m_shader.setUniform(it->first, unit);    
+
   }
 
   glBegin(GL_QUADS);
@@ -111,7 +117,7 @@ void SceneRenderPass::render(RenderContext& r) {
   beginFBO();  
 
   m_viewport->prepare(width(), height());
-  glClearColor(0.1, 0.4, 0.7, 0.8);
+  glClearColor(0, 0, 0, 1);
   if (m_clear) glClear(m_clear);
   glViewport(0, 0, width(), height());
   r.enable(GL_DEPTH_TEST);
@@ -120,12 +126,14 @@ void SceneRenderPass::render(RenderContext& r) {
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
   glShadeModel(GL_SMOOTH);
-
-
+  r.enable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   r.pushLights(*m_viewport);
   r.renderObjects(*m_viewport);
   r.popLights();
+
+  r.disable(GL_BLEND);
 
   endFBO();
 }
@@ -175,6 +183,11 @@ void HudRenderPass::render(RenderContext &r)
   for (int i=0; i<3; ++i)
     glVertex2fv(needle[i].m_floats);
   glEnd();
+
+  /* Draw a map
+  btVector3 * bb = Game::instance()->level()->aabb();
+  btVector3 size = bb[1] - bb[0];
+  */
 
   endFBO();
   r.pop();

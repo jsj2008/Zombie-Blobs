@@ -23,6 +23,7 @@ public:
                    GAME = 1 << 1 };
 
   Game();
+  bool init();
   /// The main loop
   int run();
 
