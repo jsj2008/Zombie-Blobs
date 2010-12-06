@@ -11,7 +11,7 @@ void main() {
 #endif
 
   vec3 L = (gl_LightSource[0].position.xyz - vertex);
-  float dist = 0.1 * length(L);
+  float dist = 0.05 * length(L);
   float atten = min(1.0/dist, 1.0);
   L = normalize(L);
   vec3 R = -reflect(n,L);

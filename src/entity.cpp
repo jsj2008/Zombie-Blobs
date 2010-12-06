@@ -78,10 +78,9 @@ void Entity::update(float dt) {
 bool Entity::load(const std::string& file) {
   (void)file;
 
-  // 0.3 - 1.5
-  float rad = 0.1f + 0.9f * (rand()/float(RAND_MAX));
+  float rad = 0.3f + 0.9f * (rand()/float(RAND_MAX));
   btCollisionShape * shape = new btSphereShape(rad);
-  float mass = 5 * rad;
+  float mass = rad*rad;
   btRigidBody * col = new btRigidBody(mass, new btDefaultMotionState(), shape);
   Game::instance()->physics()->addRigidBody(col);
   m_model = new Model(col);
@@ -100,24 +99,24 @@ void Enemy::render(RenderContext& r, bool bind_shader) {
   if (!m_model || !m_model->getCollisionObject())
     return;
 
+  btTransform & m = m_model->getCollisionObject()->getWorldTransform();
+
   btScalar transform[16];
-  m_model->getCollisionObject()->getWorldTransform().getOpenGLMatrix(transform);
+  m.getOpenGLMatrix(transform);
 
   glMatrixMode(GL_MODELVIEW);
 
   glPushMatrix();
   glMultMatrixf(transform);
-  btTransform & m = m_model->getCollisionObject()->getWorldTransform();
 
   btSphereShape * sp2 = dynamic_cast<btSphereShape*>(m_model->getCollisionObject()->getCollisionShape());
   btScalar rad = sp2->getRadius();
 
   glScalef(rad, rad, rad);
-  glColor4f(0, 1, 0, 1);
+  glColor4f(0, 1, 0, 0.6);
   unitSphere(30);
 
   glPopMatrix();
-
 }
 
 void Enemy::update(float dt) {
@@ -127,8 +126,16 @@ void Enemy::update(float dt) {
   btVector3 dir = (pos - t.getOrigin()).normalized();
   btRigidBody * body = dynamic_cast<btRigidBody*>(m_model->getCollisionObject());
   assert( body );
+
+  btSphereShape * sp2 = dynamic_cast<btSphereShape*>(body->getCollisionShape());
+  assert(sp2);
+
+  float r = sp2->getRadius();
+
   body->activate();
-  body->applyCentralForce(1000 * dir * dt);
+  //body->applyImpulse(r*r*r * 10 * dir * dt, btVector3(0.5, 0.5, 0));
+  //body->applyCentralImpulse(10 * dir * dt);
+  body->applyCentralForce(0.3 * r*r * dir * 1000*dt);
 
   Entity::update(dt);
 }

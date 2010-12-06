@@ -537,7 +537,6 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
       Log::info("%f %f %f", v.x(), v.y(), v.z());
     float dz = v.z() - 10.0;
     float dz_ = dz > 0 ? dz / 8.0f : dz;
-    //if (dz > 0) dz /= 4;
     for (int dx=-max_rad; dx <= max_rad; ++dx) {
       int xi = x+dx;
       if (xi < 0 || xi >= width) continue;

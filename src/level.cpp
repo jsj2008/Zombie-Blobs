@@ -204,6 +204,7 @@ void Level::render(RenderContext &r, bool bind_shader) {
     btScalar r1=sp1->getRadius(), r2=sp2->getRadius();
 
     float coeff = 1 - ((t-f).length() - r1 - r2)/2.0f;
+    coeff *= 0.8;
     r1 *= coeff; r2 *= coeff;
 
     btVector3 dir1 = t-f;
