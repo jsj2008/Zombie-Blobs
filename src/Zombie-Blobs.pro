@@ -70,13 +70,15 @@ DEFINES += GLEW_STATIC
 
 LIBS += -lGL -lGLU
 
-linux-* {
-  exists(/usr/local/include/bullet/) {
-    INCLUDEPATH += /usr/local/include/bullet/
-    LIBS += -Wl,-rpath,/usr/local/lib
-  }
-  !exists(/usr/local/include/bullet/) {
-    INCLUDEPATH += /usr/include/bullet/
-  }
-}
-LIBS += -lLinearMath -lBulletDynamics -lBulletCollision -lBulletSoftBody
+# linux-* {
+#   exists(/usr/local/include/bullet/) {
+#     INCLUDEPATH += /usr/local/include/bullet/
+#     LIBS += -Wl,-rpath,/usr/local/lib
+#   }
+#   !exists(/usr/local/include/bullet/) {
+#     INCLUDEPATH += /usr/include/bullet/
+#   }
+# }
+# LIBS += -lLinearMath -lBulletDynamics -lBulletCollision -lBulletSoftBody
+
+include(bullet/bullet.pri)
