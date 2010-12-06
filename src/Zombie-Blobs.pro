@@ -70,6 +70,7 @@ DEFINES += GLEW_STATIC
 
 win32 {
   LIBS += -lopengl32 -lglu32
+  CONFIG += console
 }
 !win32 {
   LIBS += -lGL -lGLU
