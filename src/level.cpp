@@ -1,7 +1,7 @@
 #include "level.hpp"
+#include "math.hpp"
 
 #include <cassert>
-#include <cmath>
 #include <string>
 
 #include "model.hpp"
@@ -18,7 +18,7 @@ Level::Level() : m_vbo(0) {
 }
 
 void Level::load() {
-  if (!m_verts.empty())
+  if (m_verts.size())
     return;
   assert( m_heightMap.load(std::string("map.tga")) );
   m_material = new Material();
@@ -43,13 +43,13 @@ void Level::load() {
 
     m_bb[0] = m_bb[1] = m_verts[0];
     // make inside vertices CCW order
-    for (int i=0; i < m_verts.size(); i+=3) {
+    for (size_t i=0; i < m_verts.size(); i+=3) {
       btVector3 tmp = m_verts[i+2];
       m_verts[i+2] = m_verts[i+1];
       m_verts[i+1] = tmp;
     }
 
-    for (int i=0; i < m_verts.size(); ++i) {
+    for (size_t i=0; i < m_verts.size(); ++i) {
       m_bb[0].setX(std::min(m_bb[0].x(), m_verts[i].x()));
       m_bb[0].setY(std::min(m_bb[0].y(), m_verts[i].y()));
       m_bb[0].setZ(std::min(m_bb[0].z(), m_verts[i].z()));
@@ -204,11 +204,11 @@ void Level::render(RenderContext &r, bool bind_shader) {
     btScalar r1=sp1->getRadius(), r2=sp2->getRadius();
 
     float coeff = 1 - ((t-f).length() - r1 - r2)/2.0f;
-    coeff *= 0.8;
+    coeff *= 0.8f;
     r1 *= coeff; r2 *= coeff;
 
     btVector3 dir1 = t-f;
-    btVector3 perp = dir1.rotate(btVector3(0, 0, 1), M_PI/2);
+    btVector3 perp = dir1.rotate(btVector3(0, 0, 1.0f), M_PI/2.0f);
     perp.normalize();
 
     btVector3 up = perp.cross(dir1).normalized();

@@ -4,7 +4,7 @@
 #include "forward.hpp"
 
 #include <stdint.h>
-
+#include <string>
 
 // only 8-bit grayscale supported
 class TGAImage

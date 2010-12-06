@@ -3,5 +3,5 @@
 Overlay::Overlay() {
 }
 
-void Overlay::render(float gametime, float dt) {
+void Overlay::render(int gamestate, float gametime, float dt) {
 }

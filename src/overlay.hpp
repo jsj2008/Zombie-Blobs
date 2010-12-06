@@ -4,7 +4,7 @@
 class Overlay {
 public:
   Overlay();
-  void render(float gametime, float dt);
+  void render(int gamestate, float gametime, float dt);
 };
 
 #endif // OVERLAY_HPP

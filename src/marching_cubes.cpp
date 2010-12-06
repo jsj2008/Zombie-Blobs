@@ -1,8 +1,8 @@
 #include "marching_cubes.hpp"
 #include "utils.hpp"
+#include "math.hpp"
 
 #include <algorithm>
-#include <cmath>
 #include <set>
 #include <cstring>
 
@@ -335,16 +335,18 @@ static int a2iTriangleConnectionTable[256][16] =
 
 static float fGetOffset(float fValue1, float fValue2, float fValueDesired)
 {
-        double fDelta = fValue2 - fValue1;
+        float fDelta = fValue2 - fValue1;
 
-        if(fDelta == 0.0)
+        if(fDelta == 0.0f)
         {
-                return 0.5;
+                return 0.5f;
         }
         return (fValueDesired - fValue1)/fDelta;
 }
 
-static int vMarchCube(float* data, int w, int h, int d, std::vector<btVector3>& verts, std::vector<btVector3>& normals, int fX, int fY, int fZ, int fScale, float targetValue)
+static int vMarchCube(float* data, int w, int h, int d,
+                      btAlignedObjectArray<btVector3>& verts, btAlignedObjectArray<btVector3>& normals,
+                      int fX, int fY, int fZ, int fScale, float targetValue)
 {
 	/*
         extern int aiCubeEdgeFlags[256];
@@ -431,7 +433,8 @@ static int vMarchCube(float* data, int w, int h, int d, std::vector<btVector3>& 
 
 bool MarchingCubes::triangulateGrid(const uint8_t* data,
                         int width, int height,
-                        std::vector<btVector3>& verts, std::vector<btVector3>& normals)
+                        btAlignedObjectArray<btVector3>& verts,
+                        btAlignedObjectArray<btVector3>& normals)
 {
 
   float threshold = 1.5f;
@@ -516,7 +519,7 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
   }
 
   /// the normal calculation doesn't represent this version anymore, so just calculate plane normals
-  normals.reserve(verts.size());
+  normals.resize(verts.size());
   Log::info("Calculating normals");
 #if 1
   for (unsigned int i=0; i < verts.size(); i+=3) {
@@ -524,7 +527,7 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
     btVector3 & v2 = verts[i+1];
     btVector3 & v3 = verts[i+2];
     btVector3 n = (v2-v1).cross(v3-v1).normalize();
-    normals.insert(normals.end(), 3, n);
+    normals[i] = normals[i+1] = normals[i+2] = n;
   }
 #else
   const int max_rad = 11;

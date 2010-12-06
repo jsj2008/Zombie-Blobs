@@ -6,6 +6,7 @@
 #include "player.hpp"
 #include "model.hpp"
 #include "physics.hpp"
+#include "math.hpp"
 
 #include <btBulletDynamicsCommon.h>
 

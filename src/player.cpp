@@ -2,6 +2,7 @@
 #include "utils.hpp"
 #include "game.hpp"
 #include "physics.hpp"
+#include "math.hpp"
 
 #include <LinearMath/btVector3.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
@@ -16,7 +17,7 @@ Player::~Player() {
   delete m_body;
 }
 
-void Player::init(btVector3 pos) {
+void Player::init(const btVector3& pos) {
   moveTo(pos);
 
   btTransform m;

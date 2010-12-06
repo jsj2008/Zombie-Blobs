@@ -10,7 +10,7 @@ public:
   Player();
   virtual ~Player();
 
-  void init(btVector3 pos);
+  void init(const btVector3& pos);
   void update();
   void move(float dx, float dy, float dz);
   void rotate(float x, float y);

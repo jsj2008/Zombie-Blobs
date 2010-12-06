@@ -37,7 +37,7 @@ namespace Utils {
 
 class Log {
 public:
-  enum Level { NONE = 0, ERROR, WARNING, INFO, DEBUG } level;
+  enum Level { LOG_NONE = 0, LOG_ERROR, LOG_WARNING, LOG_INFO, LOG_DEBUG } level;
   FILE* target;
 
   Log();

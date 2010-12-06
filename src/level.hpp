@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <LinearMath/btVector3.h>
+#include <LinearMath/btAlignedObjectArray.h>
 
 class Level : public Entity {
 public:
@@ -28,11 +29,12 @@ public:
   // random seed
 private:
   TGAImage m_heightMap;
-	unsigned int m_vbo;	
-  std::vector<btVector3> m_verts;
-  std::vector<btVector3> m_normals;
-  std::vector<btVector3> m_blobSpawns;
-  std::vector<Enemy*> m_blobs;
+  unsigned int m_vbo;
+
+  btAlignedObjectArray<btVector3> m_verts;
+  btAlignedObjectArray<btVector3> m_normals;
+  btAlignedObjectArray<btVector3> m_blobSpawns;
+  btAlignedObjectArray<Enemy*> m_blobs;
   typedef std::set<std::pair<Enemy*, Enemy*> > EnemyGraph;
   EnemyGraph m_neighbours;
   btVector3 m_bb[2]; // (min, max)

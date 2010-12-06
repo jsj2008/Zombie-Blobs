@@ -6,6 +6,7 @@
 #include "game.hpp"
 #include "level.hpp"
 #include "opengl.hpp"
+#include "math.hpp"
 
 RenderPass::RenderPass() :
     m_width(0), m_height(0), m_viewport(new Camera()) {
@@ -89,13 +90,13 @@ void PostProc::render(RenderContext& r) {
   glVertex2f(0.0f, 0.0f);
 
   glTexCoord2f(1.0f, 0.0f);
-  glVertex2f(width(), 0.0f);
+  glVertex2f(float(width()), 0.0f);
 
   glTexCoord2f(1.0f, 1.0f);
-  glVertex2f(width(), height());
+  glVertex2f(float(width()), float(height()));
 
   glTexCoord2f(0.0f, 1.0f);
-  glVertex2f(0.0f, height());
+  glVertex2f(0.0f, float(height()));
 
   glEnd();
 
@@ -156,13 +157,13 @@ void HudRenderPass::render(RenderContext &r)
   m_viewport->prepare(width(), height()); // normalized coords
 
   // 60 units is one round
-  float speed = (vel.length() / 60) * (2*3.145926) ;
+  float speed = (vel.length() / 60) * (2*3.145926f) ;
 
-  btVector3 needleBase(0.8, 0.2, 0);
-  float radius = 0.1;
+  btVector3 needleBase(0.8f, 0.2f, 0);
+  float radius = 0.1f;
 
   btVector3 needle[3];
-  float theta = -(3/4.0)*M_PI - speed;
+  float theta = -(3/4.0f)*M_PI - speed;
   needle[0] = radius * btVector3(cos(theta), sin(theta), 0) + needleBase;
 
   btVector3 diff = needle[0] - needleBase;

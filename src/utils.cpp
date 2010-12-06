@@ -64,7 +64,7 @@ namespace Utils {
 
 Log* Log::s_log = 0;
 
-Log::Log() : level(INFO), target(stderr) {
+Log::Log() : level(LOG_INFO), target(stderr) {
   if (!s_log)
     s_log = this;
 }
@@ -86,9 +86,9 @@ Log::~Log() {
   log(type, s_log->target, fmt, ap); \
   va_end(ap);
 
-void Log::error(const char* fmt, ...) { LOG_IMPL(ERROR) }
-void Log::warn(const char* fmt, ...) { LOG_IMPL(WARNING) }
-void Log::info(const char* fmt, ...) { LOG_IMPL(INFO) }
-void Log::debug(const char* fmt, ...) { LOG_IMPL(DEBUG) }
+void Log::error(const char* fmt, ...) { LOG_IMPL(LOG_ERROR) }
+void Log::warn(const char* fmt, ...) { LOG_IMPL(LOG_WARNING) }
+void Log::info(const char* fmt, ...) { LOG_IMPL(LOG_INFO) }
+void Log::debug(const char* fmt, ...) { LOG_IMPL(LOG_DEBUG) }
 
 #undef LOG_IMPL

@@ -59,16 +59,21 @@ HEADERS += \
     grid.hpp \
     tga_image.h \
     physics.hpp \
-    marching_cubes.hpp
+    marching_cubes.hpp \
+    math.hpp
 
 CONFIG += link_pkgconfig
-PKGCONFIG += sdl
 
 INCLUDEPATH += $$PWD/glew/include
 
 DEFINES += GLEW_STATIC
 
-LIBS += -lGL -lGLU
+win32 {
+  LIBS += -lopengl32 -lglu32
+}
+!win32 {
+  LIBS += -lGL -lGLU
+}
 
 # linux-* {
 #   exists(/usr/local/include/bullet/) {
@@ -80,5 +85,13 @@ LIBS += -lGL -lGLU
 #   }
 # }
 # LIBS += -lLinearMath -lBulletDynamics -lBulletCollision -lBulletSoftBody
+
+exists($$SDL_PATH) {
+  INCLUDEPATH += $$SDL_PATH/include
+  LIBS += -L$$SDL_PATH/lib -lSDL -lSDLmain
+}
+!exists($$SDL_PATH) {
+  PKGCONFIG += sdl
+}
 
 include(bullet/bullet.pri)

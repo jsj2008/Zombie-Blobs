@@ -4,8 +4,7 @@
 #include "input_handler.hpp"
 #include "level.hpp"
 #include "physics.hpp"
-
-#include <cmath>
+#include "math.hpp"
 
 float Game::gametime = 0.0f;
 float Game::dt = 0.0f;
@@ -67,7 +66,7 @@ int Game::run() {
       m_player->update();
       m_scene->update(dt);
       m_renderer.render(*m_scene);
-      m_overlay.render(m_game_state, dt);
+      m_overlay.render(m_game_state, gametime, dt);
     }
 
     if (m_game_state & MENU) {
@@ -160,9 +159,9 @@ void Game::handleInput() {
   static InputEvent& back = InputHandler::event("move back");
   static InputEvent& up = InputHandler::event("move up");
   static InputEvent& down = InputHandler::event("move down");
-  float dx = (-left.down + right.down) * dt;
-  float dy = (-back.down + fwd.down) * dt;
-  float dz = (-down.down + up.down) * dt;
+  float dx = (-int(left.down) + int(right.down)) * dt;
+  float dy = (-int(back.down) + int(fwd.down)) * dt;
+  float dz = (-int(down.down) + int(up.down)) * dt;
   dx *= 10; dy *= 10; dz *= 10;
   m_player->move(dx, dy, dz);
 

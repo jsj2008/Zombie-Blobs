@@ -20,12 +20,12 @@ public:
 
   float aspect() const { return float(m_width)/m_height; }
   float fov() const { return m_fov; }
-  float near() const { return m_near; }
-  float far() const { return m_far; }
-  void setFar(float far) { m_far = far; }
-  void setNear(float near) { m_near = near; }
+  float neardist() const { return m_near; }
+  float fardist() const { return m_far; }
+  void setFar(float far_) { m_far = far_; }
+  void setNear(float near_) { m_near = near_; }
 
-  void moveTo(btVector3 pos, bool preserve_look_dir=false) {
+  void moveTo(const btVector3& pos, bool preserve_look_dir=false) {
     btVector3 diff = m_center - m_eye;
     m_eye = pos;
     if (!preserve_look_dir)

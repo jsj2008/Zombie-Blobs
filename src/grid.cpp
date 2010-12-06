@@ -2,10 +2,9 @@
 #include "camera.hpp"
 #include "material.hpp"
 #include "entity.hpp"
+#include "math.hpp"
 
 #include <LinearMath/btVector3.h>
-
-#include <cmath>
 
 typedef std::set<Renderable*> GridSet;
 
@@ -25,7 +24,7 @@ Grid::GridSet& Grid::grid(int x, int y) {
 
 void Grid::objects(RenderContext::Objects& objs, Camera& camera) {
   float tan_fovy = std::tan(camera.fov() * 0.5f);
-  float n = camera.near(), f = camera.far(), a = camera.aspect();
+  float n = camera.neardist(), f = camera.fardist(), a = camera.aspect();
 
   btVector3 cam = camera.pos(), dir = camera.front(), right = camera.right(), up = camera.up();
 
