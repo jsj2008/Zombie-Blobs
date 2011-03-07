@@ -1,6 +1,8 @@
 #include "physics.hpp"
+#include "utils.hpp"
 
 #include <btBulletDynamicsCommon.h>
+#include <btBulletWorldImporter.h>
 #include <BulletSoftBody/btSoftBodyRigidBodyCollisionConfiguration.h>
 #include <BulletSoftBody/btSoftRigidDynamicsWorld.h>
 
@@ -31,7 +33,7 @@ void Physics::update(float dt) {
   m_world->stepSimulation(dt*1000, 1);
 }
 
-void Physics::addTrimesh(btVector3 * vertices, int count) {
+bool Physics::addTrimesh(btVector3 * vertices, int count, const std::string& filename) {
   btTriangleMesh* triMesh = new btTriangleMesh();
   triMesh->preallocateVertices(count / 3);
 
@@ -39,7 +41,28 @@ void Physics::addTrimesh(btVector3 * vertices, int count) {
     triMesh->addTriangle(vertices[i], vertices[i+1], vertices[i+2]);
   }
 
-  btBvhTriangleMeshShape * shape = new btBvhTriangleMeshShape(triMesh, true);
+  btBvhTriangleMeshShape * shape = 0;
+  btBulletWorldImporter import(0);
+  if (import.loadFile(filename.c_str())) {
+    if (import.getNumBvhs() == 1) {
+      Log::info("Loading optimized bvh from %s", filename.c_str());
+      shape = new btBvhTriangleMeshShape(triMesh, true, false);
+      shape->setOptimizedBvh(import.getBvhByIndex(0));
+    }
+  }
+
+  FILE* fp = 0;
+  if (!shape && (fp = fopen(filename.c_str(), "w"))) {
+    Log::info("Failed to load optimized bvh from disk, creating it");
+    shape = new btBvhTriangleMeshShape(triMesh, true);
+    Log::info("Serializing optimized bvh to %s", filename.c_str());
+    btDefaultSerializer* serializer = new btDefaultSerializer(50*1024*1024);
+    serializer->startSerialization();
+    shape->serializeSingleBvh(serializer);
+    serializer->finishSerialization();
+    fwrite(serializer->getBufferPointer(), serializer->getCurrentBufferSize(), 1, fp);
+    fclose(fp);
+  }
 
   btRigidBody * body = new btRigidBody(0, new btDefaultMotionState(), shape);
   m_world->addRigidBody(body);

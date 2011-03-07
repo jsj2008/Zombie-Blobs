@@ -12,7 +12,7 @@ public:
 
   void init();
   void update(float dt);
-  void addTrimesh(btVector3 * vertices, int count);
+  bool addTrimesh(btVector3 * vertices, int count, const std::string& filename);
   void addRigidBody(btRigidBody * body);
 
 private:

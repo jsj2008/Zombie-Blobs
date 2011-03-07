@@ -37,6 +37,7 @@ void Level::load() {
   m_blobMaterial = 0;
 #endif
   FILE * fp = fopen("level.data", "rb");
+  bool use_cache = false;
   if (!fp) {
     MarchingCubes::triangulateGrid(m_heightMap.m_data, m_heightMap.m_width, m_heightMap.m_height,
                                    m_verts, m_normals);
@@ -83,10 +84,10 @@ void Level::load() {
     fread(&m_verts[0], sizeof(btVector3), count, fp);
     fread(&m_normals[0], sizeof(btVector3), count, fp);
     fclose(fp);
-
+    use_cache = true;
   }
   Log::info("Adding level mesh to physics engine");
-  Game::instance()->physics()->addTrimesh(&m_verts[0], m_verts.size());
+  Game::instance()->physics()->addTrimesh(&m_verts[0], m_verts.size(), use_cache ? "level.bullet.data" : "");
   Log::info("Done");
 
   for (int y=0; y < m_heightMap.m_height; ++y) {
