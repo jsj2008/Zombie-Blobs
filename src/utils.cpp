@@ -7,13 +7,28 @@
 #include <cstring>
 #include <errno.h>
 
+#ifndef _WIN32
+#include <sys/time.h>
+#endif
+
 namespace {
   void log(Log::Level l, FILE* target, const char* fmt, va_list ap) {
-    static const char* prefixes[] = {"", "Error: ", "Warning: ", "Info: ", "Debug: "};
-    /// @todo timestamp
-    fprintf(target, prefixes[l]);
+    static const char* prefixes[] = {"", "Error:", "Warning:", "Info:", "Debug:"};
+#ifdef _WIN32
+    // this is untested, if this compiles then remove this comment :p
+    SYSTEMTIME lt;
+    GetLocalTime(&lt);
+    fprintf(target, "%02d:%02d:%02d.%03ld ", lt.wHour, lt.wMinute, lt.wSecond, lt.wMilliseconds);
+#else
+    struct timeval tv;
+    gettimeofday(&tv, 0);
+    struct tm* tm = localtime(&tv.tv_sec);
+    fprintf(target, "%02d:%02d:%02d.%03ld ", tm->tm_hour, tm->tm_min, tm->tm_sec, tv.tv_usec/1000);
+#endif
+
+    fprintf(target, "%8s ", prefixes[l]);
     vfprintf(target, fmt, ap);
-    fprintf(target, "\n");
+    fputc('\n', target);
   }
 }
 
