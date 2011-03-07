@@ -325,3 +325,27 @@ HEADERS += bullet/src/LinearMath/btAabbUtil2.h \
   bullet/src/LinearMath/btTransform.h \
   bullet/src/LinearMath/btTransformUtil.h \
   bullet/src/LinearMath/btVector3.h
+
+
+# BulletFileLoader
+
+SOURCES += bullet/Extras/Serialize/BulletFileLoader/bChunk.cpp \
+  bullet/Extras/Serialize/BulletFileLoader/bDNA.cpp \
+  bullet/Extras/Serialize/BulletFileLoader/bFile.cpp \
+  bullet/Extras/Serialize/BulletFileLoader/btBulletFile.cpp
+
+HEADERS += bullet/Extras/Serialize/BulletFileLoader/bChunk.h \
+  bullet/Extras/Serialize/BulletFileLoader/bCommon.h \
+  bullet/Extras/Serialize/BulletFileLoader/bDefines.h \
+  bullet/Extras/Serialize/BulletFileLoader/bDNA.h \
+  bullet/Extras/Serialize/BulletFileLoader/bFile.h \
+  bullet/Extras/Serialize/BulletFileLoader/btBulletFile.h
+
+
+# BulletWorldImporter
+
+INCLUDEPATH += bullet/Extras/Serialize/BulletWorldImporter/
+
+SOURCES += bullet/Extras/Serialize/BulletWorldImporter/btBulletWorldImporter.cpp
+
+HEADERS += bullet/Extras/Serialize/BulletWorldImporter/btBulletWorldImporter.h
