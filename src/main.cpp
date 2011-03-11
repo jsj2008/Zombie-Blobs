@@ -11,6 +11,7 @@
 #include <SDL.h>
 #include <cstdlib>
 
+#include <fstream>
 #include <string>
 
 int main(int argc, char* argv[]) {
@@ -41,7 +42,25 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   Log::info("Using GLEW %s", glewGetString(GLEW_VERSION));
-  if (true || fs)
+
+  bool debug = false;
+#ifdef __linux
+  {
+    char buffer[512];
+    std::ifstream s("/proc/self/status");
+    while (s.good()) {
+      s.getline(buffer, sizeof(buffer));
+      int pid;
+      if (sscanf(buffer, "TracerPid:\t%d", &pid) == 1 && pid) {
+        Log::info("Debug mode, not grabbing the cursor");
+        debug = true;
+        break;
+      }
+    }
+  }
+#endif
+
+  if (!debug && (true || fs))
     SDL_WM_GrabInput(SDL_GRAB_ON);
 
   SDL_ShowCursor(false);

@@ -13,6 +13,7 @@ Shader::~Shader() {
 
 bool Shader::load(const std::string& resource, Type type) {
   m_src = ResourceManager::readFile(resource);
+  m_resource = resource;
   if (m_src.empty()) return false;
 
   m_type = type;
@@ -49,11 +50,11 @@ bool Shader::compile() {
     GLchar * log = new GLchar[len];
     GLsizei size = len;
     glRun(glGetShaderInfoLog(m_shader, size, &size, log));
-    const char * msg = "GLSL compiler output: %s";
+    const char * msg = "GLSL compiler output (%s): %s";
     if (ok) {
-      Log::info(msg, log);
+      Log::info(msg, m_resource.c_str(), log);
     } else {
-      Log::error(msg, log);
+      Log::error(msg, m_resource.c_str(), log);
     }
     delete[] log;
   }
@@ -138,6 +139,9 @@ bool GLProgram::link(bool restore) {
     GLsizei size = len;
     glRun(glGetProgramInfoLog(m_prog, size, &size, log));
     const char * msg = "GLSL linker output: %s";
+    for (Shaders::iterator it = m_shaders.begin(); it != m_shaders.end(); ++it) {
+      Log::info("shader: %s", it->m_resource.c_str());
+    }
     if (ok) {
       Log::info(msg, log);
     } else {

@@ -29,7 +29,7 @@ void RenderContext::pushLights(Camera& camera) {
   glLightfv(GL_LIGHT0, GL_POSITION, pos);
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-  glMateriali(GL_FRONT, GL_SHININESS, 512);
+  glMateriali(GL_FRONT, GL_SHININESS, 128);
 
   glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 50.0f);
   btVector3 dir = camera.front().normalized();

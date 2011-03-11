@@ -33,7 +33,7 @@ void Physics::update(float dt) {
   m_world->stepSimulation(dt*1000, 1);
 }
 
-bool Physics::addTrimesh(btVector3 * vertices, int count, const std::string& filename) {
+void Physics::addTrimesh(btVector3 * vertices, int count, const std::string& filename) {
   btTriangleMesh* triMesh = new btTriangleMesh();
   triMesh->preallocateVertices(count / 3);
 
@@ -46,22 +46,24 @@ bool Physics::addTrimesh(btVector3 * vertices, int count, const std::string& fil
   if (import.loadFile(filename.c_str())) {
     if (import.getNumBvhs() == 1) {
       Log::info("Loading optimized bvh from %s", filename.c_str());
-      shape = new btBvhTriangleMeshShape(triMesh, true, false);
+      shape = new btBvhTriangleMeshShape(triMesh, false, false);
       shape->setOptimizedBvh(import.getBvhByIndex(0));
     }
   }
 
-  FILE* fp = 0;
-  if (!shape && (fp = fopen(filename.c_str(), "w"))) {
+  if (!shape) {
     Log::info("Failed to load optimized bvh from disk, creating it");
+    FILE* fp = fopen(filename.c_str(), "w");
     shape = new btBvhTriangleMeshShape(triMesh, true);
-    Log::info("Serializing optimized bvh to %s", filename.c_str());
-    btDefaultSerializer* serializer = new btDefaultSerializer(50*1024*1024);
-    serializer->startSerialization();
-    shape->serializeSingleBvh(serializer);
-    serializer->finishSerialization();
-    fwrite(serializer->getBufferPointer(), serializer->getCurrentBufferSize(), 1, fp);
-    fclose(fp);
+    if (fp) {
+      Log::info("Serializing optimized bvh to %s", filename.c_str());
+      btDefaultSerializer* serializer = new btDefaultSerializer(50*1024*1024);
+      serializer->startSerialization();
+      shape->serializeSingleBvh(serializer);
+      serializer->finishSerialization();
+      fwrite(serializer->getBufferPointer(), serializer->getCurrentBufferSize(), 1, fp);
+      fclose(fp);
+    }
   }
 
   btRigidBody * body = new btRigidBody(0, new btDefaultMotionState(), shape);

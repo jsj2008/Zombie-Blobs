@@ -49,7 +49,10 @@ protected:
   /// The type of the shader
   Type m_type;
 
+  std::string m_resource;
   std::string m_src;
+
+  friend class GLProgram;
 };
 
 

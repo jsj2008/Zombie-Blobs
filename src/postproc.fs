@@ -1,3 +1,4 @@
+#version 120
 uniform sampler2D scene;
 uniform sampler2D sceneDepth;
 uniform sampler2D normals;
