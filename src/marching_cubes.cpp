@@ -424,7 +424,7 @@ static int vMarchCube(float* data, int w, int h, int d,
                 for(iCorner = 0; iCorner < 3; iCorner++)
                 {
                         iVertex = a2iTriangleConnectionTable[iFlagIndex][3*iTriangle+iCorner];
-                        btVector3 v(asEdgeVertex[iVertex][0], asEdgeVertex[iVertex][1], asEdgeVertex[iVertex][2]);                        
+                        btVector3 v(asEdgeVertex[iVertex][0], asEdgeVertex[iVertex][1], asEdgeVertex[iVertex][2]);
                         verts.push_back(v);
                 }
         }
@@ -443,55 +443,57 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
   const int depth = 50;
   int sz = width*height*depth;
   float * voxels = new float[sz];
-  //memset(voxels, 0, sz);
-
+  memset(voxels, 0, sz);
 
   {
     Log::info("Generating voxel data");
+    const uint8_t* datait = data;
     for (int y=0; y < height; ++y) {
       for (int x=0; x < width; ++x) {
+        float magnitude = 0.01f + *datait++ / 255.0f;
+        magnitude = 10*(1 - magnitude);
+        float md = 1.0f/magnitude;
+        int xstart = x-magnitude < 0 ? x : magnitude;
+        int xend = x+magnitude >= width ? width-1-x : magnitude;
+
+        int ystart = y-magnitude < 0 ? y : magnitude;
+        int yend = y+magnitude >= height ? height-1-y : magnitude;
+
         for (int z=10; z <= 10; ++z) {
-          float magnitude = 0.01f + data[y * width + x] / 255.0f;
-          magnitude = 10*(1 - magnitude);
-          int xstart = x-magnitude < 0 ? x : magnitude;
-          int xend = x+magnitude >= width ? width-1-x : magnitude;
-
-          int ystart = y-magnitude < 0 ? y : magnitude;
-          int yend = y+magnitude >= height ? height-1-y : magnitude;
-
           int zstart = z-magnitude < 0 ? z : magnitude;
           int zend = z+4*magnitude >= depth ? depth-1-z : 4*magnitude;
 
-          for (int dx=-xstart; dx <= xend; ++dx) {
-            int xi = x+dx;
+          float * vox1 = voxels + y*width + x - xstart + (z - zstart)*width*height;
+
+          for (int dz=-zstart; dz <= zend; ++dz, vox1 += width*height) {
+            float lena = dz < 0 ? dz : dz/8.0f;
+            lena *= lena;
 
             for (int dy=-ystart; dy <= yend; ++dy) {
-              int yi = y+dy;
+              float lenb = lena + dy*dy;
 
-              for (int dz=-zstart; dz <= zend; ++dz) {
-                int zi = z+dz;
+              float* vox2 = vox1 + dy*width;
 
-                float fakedz = dz < 0 ? dz : dz/8.0f;
+              for (int dx=-xstart; dx <= xend; ++dx, ++vox2) {
 
-                float length2 = btVector3(dx, dy, fakedz).length2();
+                float length2 = lenb + dx*dx;
                 assert(std::isfinite(length2));
-                float m = 1 - length2/magnitude;
+                float m = 1 - length2 * md;
                 if (m <= 0)
                   continue;
-                m *= m*m;
                 assert(std::isfinite(m));
-                voxels[zi*width*height + yi*width + xi] += m;
+                *vox2 += m*m*m;
               }
             }
           }
         }
       }
     }
+    Log::info("Voxel data generation ready");
+    //exit(0);
   }
 
-
-
-	{
+  if (0) {
     float maxim = *std::max_element(voxels, voxels + width*height*depth);
     Log::info("max: %f", maxim);
     uint8_t * tmp = new uint8_t[width*height*depth];
@@ -503,20 +505,23 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
     fclose(fp);
     delete[] tmp;
 	}
-	{
-	FILE* fp = fopen("map.raw", "w+");
-  fwrite(data, width*height, 1, fp);
-  fclose(fp);
+  if (0) {
+    FILE* fp = fopen("map.raw", "w+");
+    fwrite(data, width*height, 1, fp);
+    fclose(fp);
 	}
 
-  for (int y=1; y < height-1; y++) {
-    for (int x=1; x < width-1; x++ ) {
-      for (int z=1; z < depth-1; ++z) {
+  Log::info("Marching start");
+  for (int z=1; z < depth-1; ++z) {
+    for (int y=1; y < height-1; ++y) {
+      for (int x=1; x < width-1; ++x) {
         vMarchCube(voxels, width, height, depth, verts, normals, x, y, z, 1, threshold);
       }
     }
-    if (y % 100 == 0) Log::info("Marching slice %d", y);
+    if (z % 100 == 0) Log::info("Marching slice %d", z);
   }
+  Log::info("Marching end");
+  exit(0);
 
   /// the normal calculation doesn't represent this version anymore, so just calculate plane normals
   normals.resize(verts.size());

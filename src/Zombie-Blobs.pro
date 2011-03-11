@@ -76,6 +76,14 @@ win32 {
   LIBS += -lGL -lGLU
 }
 
+CONFIG(release, debug|release) {
+  DEFINES += NDEBUG
+}
+
+#QMAKE_CXXFLAGS += -pg -g
+#QMAKE_CFLAGS += -pg -g
+
+
 # linux-* {
 #   exists(/usr/local/include/bullet/) {
 #     INCLUDEPATH += /usr/local/include/bullet/

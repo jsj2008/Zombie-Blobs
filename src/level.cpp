@@ -20,7 +20,8 @@ Level::Level() : m_vbo(0) {
 void Level::load() {
   if (m_verts.size())
     return;
-  assert( m_heightMap.load(std::string("map.tga")) );
+  bool ok = m_heightMap.load(std::string("map.tga"));
+  assert(ok);
   m_material = new Material();
   GLProgram * program = new GLProgram();
   program->addShader("level.vs", Shader::Vertex);
@@ -153,7 +154,8 @@ void Level::spawnNewEnemy() {
 
   e->setMaterial(m_blobMaterial);
 
-  assert ( e->load("blob.obj") );
+  bool ok = e->load("blob.obj");
+  assert(ok);
   btCollisionObject * col =  e->getModel()->getCollisionObject();
   btTransform& trans = col->getWorldTransform();
   trans.setOrigin(pos);

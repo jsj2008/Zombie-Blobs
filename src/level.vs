@@ -6,6 +6,6 @@ void main()
 {
 	gl_Position = ftransform();
   vertex = (gl_ModelViewMatrix * gl_Vertex).xyz;
-	normal = normalize(gl_NormalMatrix * gl_Normal);
+	normal = gl_NormalMatrix * gl_Normal;
 	gl_FrontColor = gl_Color;
 }
