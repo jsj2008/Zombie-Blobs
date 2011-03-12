@@ -41,15 +41,9 @@ void Level::load() {
   bool use_cache = false;
   if (!fp) {
     MarchingCubes::triangulateGrid(m_heightMap.m_data, m_heightMap.m_width, m_heightMap.m_height,
-                                   m_verts, m_normals);
+                                   m_verts, m_indices, m_normals);
 
     m_bb[0] = m_bb[1] = m_verts[0];
-    // make inside vertices CCW order
-    for (size_t i=0; i < m_verts.size(); i+=3) {
-      btVector3 tmp = m_verts[i+2];
-      m_verts[i+2] = m_verts[i+1];
-      m_verts[i+1] = tmp;
-    }
 
     for (size_t i=0; i < m_verts.size(); ++i) {
       m_bb[0].setX(std::min(m_bb[0].x(), m_verts[i].x()));
@@ -60,10 +54,8 @@ void Level::load() {
       m_bb[1].setY(std::max(m_bb[1].y(), m_verts[i].y()));
       m_bb[1].setZ(std::max(m_bb[1].z(), m_verts[i].z()));
 
-
-      m_verts[i].setW(1);
-      m_normals[i] *= -1; // make normals point to interior
-      m_normals[i].setW(1);
+      // m_verts[i].setW(1);
+      // m_normals[i].setW(1);
     }
     Log::info("vertices %d, m_normals %d", m_verts.size(), m_normals.size());
     Log::info("bb (%f,%f,%f) -> (%f, %f, %f)",
@@ -73,16 +65,21 @@ void Level::load() {
 
     fp = fopen("level.data", "w+");
     int count = m_verts.size();
+    int icount = m_indices.size();
     fwrite(&count, sizeof(int), 1, fp);
+    fwrite(&icount, sizeof(int), 1, fp);
     fwrite(&m_verts[0], sizeof(btVector3), count, fp);
+    fwrite(&m_indices[0], sizeof(unsigned int), icount, fp);
     fwrite(&m_normals[0], sizeof(btVector3), count, fp);
     fclose(fp);
   } else {
     Log::info("Loading precomputed level from level.data");
-    int count;
+    int count, icount;
     fread(&count, sizeof(int), 1, fp);
-    m_verts.resize(count); m_normals.resize(count);
+    fread(&icount, sizeof(int), 1, fp);
+    m_verts.resize(count); m_indices.resize(icount); m_normals.resize(count);
     fread(&m_verts[0], sizeof(btVector3), count, fp);
+    fread(&m_indices[0], sizeof(unsigned int), icount, fp);
     fread(&m_normals[0], sizeof(btVector3), count, fp);
     fclose(fp);
     use_cache = true;
@@ -171,28 +168,38 @@ void Level::render(RenderContext &r, bool bind_shader) {
 
   float s = 1;
 
-  static GLuint m_vbo = 0;
-  if (m_vbo == 0) {
+  static GLuint m_vbo[2] = {0,0};
+  int vsize = sizeof(btVector3)*m_verts.size(),
+      nsize = sizeof(btVector3)*m_normals.size(),
+      isize = sizeof(unsigned int)*m_indices.size();
+  if (m_vbo[0] == 0) {
 
-    glGenBuffers(1, &m_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(btVector3)*(m_verts.size()+m_normals.size()), NULL, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(btVector3)*m_verts.size(), &m_verts[0]);
-    glBufferSubData(GL_ARRAY_BUFFER, sizeof(btVector3)*m_verts.size(), sizeof(btVector3)*m_verts.size(), &m_normals[0]);
+    glGenBuffers(2, m_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo[0]);
+    assert(vsize == nsize);
+    glBufferData(GL_ARRAY_BUFFER, vsize+nsize, NULL, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, vsize, &m_verts[0]);
+    glBufferSubData(GL_ARRAY_BUFFER, vsize, nsize, &m_normals[0]);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vbo[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, isize, &m_indices[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   }
 
   glColor4f(0.9, 0.4, 0.3, 1.0);
-  glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-  glVertexPointer(4, GL_FLOAT, 0, 0);
-  glNormalPointer(GL_FLOAT, sizeof(btVector3), (char*)0 + sizeof(btVector3)*m_verts.size());
+  glBindBuffer(GL_ARRAY_BUFFER, m_vbo[0]);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vbo[1]);
+  glVertexPointer(3, GL_FLOAT, sizeof(btVector3), 0);
+  glNormalPointer(GL_FLOAT, sizeof(btVector3), (char*)0 + vsize);
 
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_NORMAL_ARRAY);
-  glDrawArrays(GL_TRIANGLES, 0, m_verts.size());
+  glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
   glDisableClientState(GL_VERTEX_ARRAY);
   glDisableClientState(GL_NORMAL_ARRAY);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 
   glColor4f(0, 1, 0, 1.0);

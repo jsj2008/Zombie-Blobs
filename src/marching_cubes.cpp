@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <set>
 #include <cstring>
-
+#include <map>
 
 MarchingCubes::MarchingCubes()
 {
@@ -421,7 +421,7 @@ static int vMarchCube(float* data, int w, int h, int d,
                 if(a2iTriangleConnectionTable[iFlagIndex][3*iTriangle] < 0)
                         return iTriangle;
 
-                for(iCorner = 0; iCorner < 3; iCorner++)
+                for(iCorner = 2; iCorner >= 0; iCorner--)
                 {
                         iVertex = a2iTriangleConnectionTable[iFlagIndex][3*iTriangle+iCorner];
                         btVector3 v(asEdgeVertex[iVertex][0], asEdgeVertex[iVertex][1], asEdgeVertex[iVertex][2]);
@@ -431,9 +431,26 @@ static int vMarchCube(float* data, int w, int h, int d,
         return 5;
 }
 
+/// This probably is not Strict Weak Ordering, but who cares if it doesn't crash :p
+struct vcmp {
+  bool operator()(const btVector3 & a, const btVector3 & b) {
+    static const float d = 0.01f;
+    float v = a.x() - b.x();
+    if (v < -d) return true;
+    if (v > d) return false;
+    v = a.y() - b.y();
+    if (v < -d) return true;
+    if (v > d) return false;
+    v = a.z() - b.z();
+    if (v < -d) return true;
+    return false;
+  }
+};
+
 bool MarchingCubes::triangulateGrid(const uint8_t* data,
                         int width, int height,
                         btAlignedObjectArray<btVector3>& verts,
+                        btAlignedObjectArray<unsigned int>& indices,
                         btAlignedObjectArray<btVector3>& normals)
 {
 
@@ -490,7 +507,6 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
       }
     }
     Log::info("Voxel data generation ready");
-    //exit(0);
   }
 
   if (0) {
@@ -512,29 +528,72 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
 	}
 
   Log::info("Marching start");
+  btAlignedObjectArray<btVector3> verts_lst;
   for (int z=1; z < depth-1; ++z) {
     for (int y=1; y < height-1; ++y) {
       for (int x=1; x < width-1; ++x) {
-        vMarchCube(voxels, width, height, depth, verts, normals, x, y, z, 1, threshold);
+        vMarchCube(voxels, width, height, depth, verts_lst, normals, x, y, z, 1, threshold);
       }
     }
     if (z % 100 == 0) Log::info("Marching slice %d", z);
   }
   Log::info("Marching end");
-  exit(0);
 
-  /// the normal calculation doesn't represent this version anymore, so just calculate plane normals
-  normals.resize(verts.size());
   Log::info("Calculating normals");
-#if 1
-  for (unsigned int i=0; i < verts.size(); i+=3) {
-    btVector3 & v1 = verts[i];
-    btVector3 & v2 = verts[i+1];
-    btVector3 & v3 = verts[i+2];
-    btVector3 n = (v2-v1).cross(v3-v1).normalize();
-    normals[i] = normals[i+1] = normals[i+2] = n;
+  btAlignedObjectArray<btVector3> normals_acc;
+  normals_acc.resize(verts_lst.size()/3);
+
+  for (unsigned int i=0; i < verts_lst.size(); i+=3) {
+    const btVector3 & v1 = verts_lst[i];
+    const btVector3 & v2 = verts_lst[i+1];
+    const btVector3 & v3 = verts_lst[i+2];
+    const btVector3 n = (v2-v1).cross(v3-v1).normalize();
+    normals_acc[i/3] = n;
   }
-#else
+
+  //std::map<uint64_t, int> map;
+  std::map<const btVector3, int, vcmp> map;
+  verts.push_back(btVector3(width*2, height*2, depth*2));
+  normals.push_back(btVector3(1, 0, 0));
+
+/*  float wf = ((1<<22)-1) / width;
+  float hf = ((1<<21)-1) / height;
+  float df = ((1<<21)-1) / depth;*/
+  for (unsigned int i=0; i < verts_lst.size(); ++i) {
+    const btVector3 & v = verts_lst[i];
+/*    assert(v.x() >= 0.0f && v.x() <= width);
+    assert(v.y() >= 0.0f && v.y() <= height);
+    assert(v.z() >= 0.0f && v.z() <= depth);
+    uint64_t key = (uint64_t(v.x()*wf) << 42) | (uint64_t(v.y()*hf) << 21) | uint64_t(v.z()*df);*/
+
+    int& idx = map[v];
+    if(idx == 0) {
+      idx = verts.size();
+      verts.push_back(v);
+      normals.push_back(normals_acc[i/3]);
+    } else {
+      normals[idx] += normals_acc[i/3];
+    }
+    indices.push_back(idx);
+  }
+  for(int i = 0; i < normals.size(); ++i) {
+    normals[i].normalize();
+  }
+
+  /*
+  FILE* fp = fopen("model.obj", "w");
+  for(int i = 0; i < verts.size(); ++i) {
+    const btVector3 & v = verts[i];
+    const btVector3 & n = normals[i];
+
+    fprintf(fp, "v %.6f %.6f %.6f\n", v.x(), v.y(), v.z());
+    //fprintf(fp, "vn %.6f %.6f %.6f\n", n.x(), n.y(), n.z());
+  }
+  for(int i = 0; i < indices.size(); i += 3) {
+    fprintf(fp, "f %d// %d// %d//\n", indices[i]+1, indices[i+1]+1, indices[i+2]+1);
+  }
+  fclose(fp);*/
+#if 0
   const int max_rad = 11;
   // try to calculate normals from scalar field gradient
   for (int i=0; i<verts.size(); ++i) {		

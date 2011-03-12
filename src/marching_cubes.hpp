@@ -13,6 +13,7 @@ public:
   static bool triangulateGrid(const uint8_t * data,
                           int width, int height,
                           btAlignedObjectArray<btVector3>& verts,
+                          btAlignedObjectArray<unsigned int>& indices,
                           btAlignedObjectArray<btVector3>& normals);
 private:
   MarchingCubes();

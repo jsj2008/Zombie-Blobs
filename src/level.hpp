@@ -32,6 +32,7 @@ private:
   unsigned int m_vbo;
 
   btAlignedObjectArray<btVector3> m_verts;
+  btAlignedObjectArray<unsigned int> m_indices;
   btAlignedObjectArray<btVector3> m_normals;
   btAlignedObjectArray<btVector3> m_blobSpawns;
   btAlignedObjectArray<Enemy*> m_blobs;
