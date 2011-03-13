@@ -12,8 +12,10 @@ public:
 
   void init();
   void update(float dt);
-  void addTrimesh(btVector3 * vertices, int count, const std::string& filename);
-  void addRigidBody(btRigidBody * body);
+  void addTrimesh(const btAlignedObjectArray<btVector3>& verts,
+                  const btAlignedObjectArray<unsigned int>& indices,
+                  const std::string& filename);
+  void addRigidBody(btRigidBody* body);
 
 private:
   btBroadphaseInterface* m_broadphase;

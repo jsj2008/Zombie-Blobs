@@ -431,22 +431,6 @@ static int vMarchCube(float* data, int w, int h, int d,
         return 5;
 }
 
-/// This probably is not Strict Weak Ordering, but who cares if it doesn't crash :p
-struct vcmp {
-  bool operator()(const btVector3 & a, const btVector3 & b) {
-    static const float d = 0.01f;
-    float v = a.x() - b.x();
-    if (v < -d) return true;
-    if (v > d) return false;
-    v = a.y() - b.y();
-    if (v < -d) return true;
-    if (v > d) return false;
-    v = a.z() - b.z();
-    if (v < -d) return true;
-    return false;
-  }
-};
-
 bool MarchingCubes::triangulateGrid(const uint8_t* data,
                         int width, int height,
                         btAlignedObjectArray<btVector3>& verts,
@@ -535,47 +519,91 @@ bool MarchingCubes::triangulateGrid(const uint8_t* data,
         vMarchCube(voxels, width, height, depth, verts_lst, normals, x, y, z, 1, threshold);
       }
     }
-    if (z % 100 == 0) Log::info("Marching slice %d", z);
+    if (z % 10 == 0) Log::info("Marching slice %d", z);
   }
   Log::info("Marching end");
 
   Log::info("Calculating normals");
-  btAlignedObjectArray<btVector3> normals_acc;
-  normals_acc.resize(verts_lst.size()/3);
 
-  for (unsigned int i=0; i < verts_lst.size(); i+=3) {
-    const btVector3 & v1 = verts_lst[i];
-    const btVector3 & v2 = verts_lst[i+1];
-    const btVector3 & v3 = verts_lst[i+2];
-    const btVector3 n = (v2-v1).cross(v3-v1).normalize();
-    normals_acc[i/3] = n;
-  }
-
-  //std::map<uint64_t, int> map;
-  std::map<const btVector3, int, vcmp> map;
+  std::map<uint64_t, int> map;
   verts.push_back(btVector3(width*2, height*2, depth*2));
   normals.push_back(btVector3(1, 0, 0));
+  assert(verts.size() == 1);
 
-/*  float wf = ((1<<22)-1) / width;
+  float wf = ((1<<22)-1) / width;
   float hf = ((1<<21)-1) / height;
-  float df = ((1<<21)-1) / depth;*/
-  for (unsigned int i=0; i < verts_lst.size(); ++i) {
-    const btVector3 & v = verts_lst[i];
-/*    assert(v.x() >= 0.0f && v.x() <= width);
-    assert(v.y() >= 0.0f && v.y() <= height);
-    assert(v.z() >= 0.0f && v.z() <= depth);
-    uint64_t key = (uint64_t(v.x()*wf) << 42) | (uint64_t(v.y()*hf) << 21) | uint64_t(v.z()*df);*/
+  float df = ((1<<21)-1) / depth;
 
-    int& idx = map[v];
-    if(idx == 0) {
-      idx = verts.size();
-      verts.push_back(v);
-      normals.push_back(normals_acc[i/3]);
-    } else {
-      normals[idx] += normals_acc[i/3];
-    }
-    indices.push_back(idx);
+  for (int i=0; i < verts_lst.size();) {
+    const btVector3 & v1 = verts_lst[i++];
+    const btVector3 & v2 = verts_lst[i++];
+    const btVector3 & v3 = verts_lst[i++];
+    uint64_t key1 = (uint64_t(v1.x()*wf) << 42) | (uint64_t(v1.y()*hf) << 21) | uint64_t(v1.z()*df);
+    uint64_t key2 = (uint64_t(v2.x()*wf) << 42) | (uint64_t(v2.y()*hf) << 21) | uint64_t(v2.z()*df);
+    uint64_t key3 = (uint64_t(v3.x()*wf) << 42) | (uint64_t(v3.y()*hf) << 21) | uint64_t(v3.z()*df);
+    int& idx1 = map[key1];
+    if(idx1 == 0) { idx1 = verts.size(); verts.push_back(v1); }
+    int& idx2 = map[key2];
+    if(idx2 == 0) { idx2 = verts.size(); verts.push_back(v2); }
+    int& idx3 = map[key3];
+    if(idx3 == 0) { idx3 = verts.size(); verts.push_back(v3); }
+
+    if(idx1 == idx2 || idx1 == idx3 || idx2 == idx3) continue;
+    indices.push_back(idx1);
+    indices.push_back(idx2);
+    indices.push_back(idx3);
   }
+
+  std::vector<int> users;
+  users.resize(verts.size());
+  verts_lst.clear();
+  verts_lst.resize(verts.size());
+  normals.resize(verts.size());
+  memset(&normals[0], 0, sizeof(normals[0])*normals.size());
+
+  const int repeats = 2;
+  for (int r = 0; r < repeats; ++r) {
+    memset(&verts_lst[0], 0, sizeof(verts_lst[0])*verts.size());
+
+    for (int i = 0; i < indices.size();) {
+      const unsigned int i1 = indices[i++];
+      const unsigned int i2 = indices[i++];
+      const unsigned int i3 = indices[i++];
+      if (r == 0) {
+        ++users[i1]; ++users[i2]; ++users[i3];
+      }
+      const btVector3 v = (verts[i1] + verts[i2] + verts[i3]) * 0.33333333f;
+
+      verts_lst[i1] += v;
+      verts_lst[i2] += v;
+      verts_lst[i3] += v;
+    }
+
+    for (int i = 1; i < verts.size(); ++i) {
+      verts[i] = verts_lst[i] / float(users[i]);
+    }
+  }
+
+  for (int i = 0; i < indices.size();) {
+    const unsigned int i1 = indices[i++];
+    const unsigned int i2 = indices[i++];
+    const unsigned int i3 = indices[i++];
+
+    const btVector3 & v1 = verts[i1];
+    const btVector3 & v2 = verts[i2];
+    const btVector3 & v3 = verts[i3];
+    assert(std::isfinite(v1.x() + v1.y() + v1.z()));
+    assert(std::isfinite(v2.x() + v2.y() + v2.z()));
+    assert(std::isfinite(v3.x() + v3.y() + v3.z()));
+
+    const btVector3 n = (v2-v1).cross(v3-v1).normalize();
+    assert(std::isfinite(n.x() + n.y() + n.z()));
+
+    normals[i1] += n;
+    normals[i2] += n;
+    normals[i3] += n;
+  }
+
   for(int i = 0; i < normals.size(); ++i) {
     normals[i].normalize();
   }

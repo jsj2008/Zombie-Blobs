@@ -14,7 +14,7 @@
 #include "game.hpp"
 #include "physics.hpp"
 
-Level::Level() : m_vbo(0) {
+Level::Level() : m_vbo(0), m_permtex(0), m_gradtex(0) {
 }
 
 void Level::load() {
@@ -45,7 +45,7 @@ void Level::load() {
 
     m_bb[0] = m_bb[1] = m_verts[0];
 
-    for (size_t i=0; i < m_verts.size(); ++i) {
+    for (int i=0; i < m_verts.size(); ++i) {
       m_bb[0].setX(std::min(m_bb[0].x(), m_verts[i].x()));
       m_bb[0].setY(std::min(m_bb[0].y(), m_verts[i].y()));
       m_bb[0].setZ(std::min(m_bb[0].z(), m_verts[i].z()));
@@ -85,7 +85,7 @@ void Level::load() {
     use_cache = true;
   }
   Log::info("Adding level mesh to physics engine");
-  Game::instance()->physics()->addTrimesh(&m_verts[0], m_verts.size(), use_cache ? "level.bullet.data" : "");
+  Game::instance()->physics()->addTrimesh(m_verts, m_indices, use_cache ? "level.bullet.data" : "");
   Log::info("Done");
 
   for (int y=0; y < m_heightMap.m_height; ++y) {
@@ -173,7 +173,6 @@ void Level::render(RenderContext &r, bool bind_shader) {
       nsize = sizeof(btVector3)*m_normals.size(),
       isize = sizeof(unsigned int)*m_indices.size();
   if (m_vbo[0] == 0) {
-
     glGenBuffers(2, m_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo[0]);
     assert(vsize == nsize);
@@ -188,6 +187,53 @@ void Level::render(RenderContext &r, bool bind_shader) {
   }
 
   glColor4f(0.9, 0.4, 0.3, 1.0);
+  if (m_permtex == 0) {
+    glRun(glGenTextures(1, &m_permtex));
+    glRun(glGenTextures(1, &m_gradtex));
+
+    float permdata[256];
+    {
+      std::vector<float> tmp(256);
+      for (int i = 0; i < 256; ++i) tmp[i] = i/255.0f;
+      for (int i = 0; i < 256; ++i) {
+        int idx = (rand() >> 7) % tmp.size();
+        permdata[i] = tmp[idx];
+        tmp.erase(tmp.begin() + idx);
+      }
+    }
+    float graddata[] = {
+      1,1,0,    -1,1,0,    1,-1,0,    -1,-1,0,
+      1,0,1,    -1,0,1,    1,0,-1,    -1,0,-1,
+      0,1,1,    0,-1,1,    0,1,-1,    0,-1,-1,
+      1,1,0,    0,-1,1,    -1,1,0,    0,-1,-1,
+    };
+
+    glBindTexture(GL_TEXTURE_1D, m_permtex);
+    glTexImage1D(GL_TEXTURE_1D, 0, 1, 256, 0, GL_LUMINANCE, GL_FLOAT, permdata);
+    glRun(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+    glRun(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+    glRun(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    glRun(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+
+    glBindTexture(GL_TEXTURE_1D, m_gradtex);
+    glTexImage1D(GL_TEXTURE_1D, 0, 3, 16, 0, GL_RGB, GL_FLOAT, graddata);
+    glRun(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+    glRun(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+    glRun(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    glRun(glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+
+    glBindTexture(GL_TEXTURE_1D, 0);
+  }
+
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_1D, m_gradtex);
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_1D, m_permtex);
+
+  m_material->shader()->setUniform("permSampler", 0);
+  m_material->shader()->setUniform("gradSampler", 1);
+
   glBindBuffer(GL_ARRAY_BUFFER, m_vbo[0]);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vbo[1]);
   glVertexPointer(3, GL_FLOAT, sizeof(btVector3), 0);

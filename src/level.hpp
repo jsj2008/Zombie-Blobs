@@ -40,6 +40,8 @@ private:
   EnemyGraph m_neighbours;
   btVector3 m_bb[2]; // (min, max)
 
+  unsigned int m_permtex, m_gradtex;
+
   Material * m_blobMaterial;
 };
 

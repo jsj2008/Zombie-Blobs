@@ -33,20 +33,33 @@ void Physics::update(float dt) {
   m_world->stepSimulation(dt*1000, 1);
 }
 
-void Physics::addTrimesh(btVector3 * vertices, int count, const std::string& filename) {
-  btTriangleMesh* triMesh = new btTriangleMesh();
-  triMesh->preallocateVertices(count / 3);
+void Physics::addTrimesh(const btAlignedObjectArray<btVector3>& verts,
+                         const btAlignedObjectArray<unsigned int>& indices,
+                         const std::string& filename) {
+  btIndexedMesh mesh;
+  mesh.m_numTriangles = indices.size()/3;
+  mesh.m_triangleIndexBase = (const unsigned char*)&indices[0];
+  mesh.m_triangleIndexStride = (char*)&indices[3] - (char*)&indices[0];
+  mesh.m_numVertices = verts.size();
+  mesh.m_vertexBase = (const unsigned char*)&verts[0];
+  mesh.m_vertexStride = (char*)&verts[1] - (char*)&verts[0];
 
-  for (int i=0; i < count; i += 3) {
-    triMesh->addTriangle(vertices[i], vertices[i+1], vertices[i+2]);
-  }
+  assert(sizeof(indices[0]) == 4);
+  assert(sizeof(verts[0].x()) == 4);
+  assert(sizeof(verts[0]) == 4*4);
+  assert(mesh.m_vertexType == PHY_FLOAT);
+  assert(mesh.m_triangleIndexStride == 4*3);
+  assert(mesh.m_vertexStride == 4*4);
+
+  btTriangleIndexVertexArray* triangles = new btTriangleIndexVertexArray;
+  triangles->addIndexedMesh(mesh);
 
   btBvhTriangleMeshShape * shape = 0;
   btBulletWorldImporter import(0);
   if (import.loadFile(filename.c_str())) {
     if (import.getNumBvhs() == 1) {
       Log::info("Loading optimized bvh from %s", filename.c_str());
-      shape = new btBvhTriangleMeshShape(triMesh, false, false);
+      shape = new btBvhTriangleMeshShape(triangles, false, false);
       shape->setOptimizedBvh(import.getBvhByIndex(0));
     }
   }
@@ -54,7 +67,7 @@ void Physics::addTrimesh(btVector3 * vertices, int count, const std::string& fil
   if (!shape) {
     Log::info("Failed to load optimized bvh from disk, creating it");
     FILE* fp = fopen(filename.c_str(), "w");
-    shape = new btBvhTriangleMeshShape(triMesh, true);
+    shape = new btBvhTriangleMeshShape(triangles, true);
     if (fp) {
       Log::info("Serializing optimized bvh to %s", filename.c_str());
       btDefaultSerializer* serializer = new btDefaultSerializer(50*1024*1024);
