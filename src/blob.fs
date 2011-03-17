@@ -1,6 +1,14 @@
-#version 120
-varying vec3 normal;
-varying vec3 vertex;
+#version 150 compatibility
+
+precision highp float;
+
+in vec3 normal;
+in vec3 vertex;
+
+out vec4 diffuse;
+out vec3 normals;
+out float lindepth;
+
 uniform float time;
 
 void main() {
@@ -14,9 +22,8 @@ void main() {
   vec4 diff = vec4(0, 1, 0, 1) * max(dot(L, n), 0.0);
   diff *= max(dot(L, vec3(0, 0, 1)), 0.0);
   vec4 spec = vec4(0, 0.3, 0, 1) * 0.5 * pow(max(dot(R, L), 0.0), 8);
-	gl_FragData[0] = diff + spec;
-	gl_FragData[0].a = 1.0;
-//	gl_FragData[0] = gl_Color;
-	gl_FragData[0].rgb *= atten;
-  gl_FragData[1].xyz = n;
+
+  normals = normalize(cross(dFdx(vertex), dFdy(vertex)));
+  diffuse = vec4((diff+spec).rgb, 1.0);
+  lindepth = -vertex.z;
 }

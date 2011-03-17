@@ -1,7 +1,15 @@
-#version 120
-varying vec3 normal;
-varying vec3 vertex;
-varying vec3 world;
+#version 150 compatibility
+
+precision highp float;
+
+in vec3 normal;
+in vec3 vertex;
+in vec3 world;
+
+out vec4 diffuse;
+out vec3 normals;
+out float lindepth;
+
 uniform float time;
 
 uniform sampler1D permSampler, gradSampler;
@@ -78,18 +86,24 @@ void main() {
   vec3 cols = vec3(sin(lt + 1.4*scale*vertex.x), sin(lt + scale*vertex.y), sin(lt + scale*vertex.z));
 #endif
 
+  float depth = -vertex.z/200.0;
+  vec3 fog = vec3(1.0 - depth * depth);
+
   vec3 L = (gl_LightSource[0].position.xyz - vertex);
   float dist = 0.05 * length(L);
   float atten = min(1.0/dist, 1.0);
-  L = mix(normalize(L), n, marble_intensity(world*1.0));
+  L = normalize(L);
+//  L = mix(normalize(L), n, marble_intensity(world*0.5));
   vec3 R = -reflect(n,L);
   vec4 diff = gl_Color * max(dot(L, n), 0.0);
   vec4 spec = 0.3 * gl_Color * pow(max(dot(R, L), 0.0), 8);
-  gl_FragData[0] = diff + spec;
-	gl_FragData[0].a = 1.0;
-//	gl_FragData[0] = gl_Color;
-	gl_FragData[0].rgb *= atten;
-//	gl_FragData[0].rgb += vec3(inoise(world*10.0));
-	gl_FragData[0].rgb += vec3(inoise(world*50.0)) / max(dist*dist*dist, 1) * 0.2;
-  gl_FragData[1].xyz = n;
+//  float id = 1.0 - dist*0.5;
+//  spec += vec4(inoise(world*30)) * max(0.0, id*id*id) * 0.1;
+
+  // Use face normals instead of interpolated normals to make sure that the tangent planes
+  // associated with the normals are actually tangent to the surface
+  normals = normalize(cross(dFdx(vertex), dFdy(vertex)));
+//  diffuse.rgb = mix(vec3(turbulence(world)), (diff+spec).rgb, clamp(dist, 0, 1));
+  diffuse = vec4((diff+spec).rgb * fog, 1.0);
+  lindepth = -vertex.z; //(-vertex.z-0.1)/(200.0-0.1); // vertex.z;
 }

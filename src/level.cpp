@@ -13,6 +13,7 @@
 #include "shader.hpp"
 #include "game.hpp"
 #include "physics.hpp"
+#include "render_context.hpp"
 
 Level::Level() : m_vbo(0), m_permtex(0), m_gradtex(0) {
 }
@@ -231,8 +232,8 @@ void Level::render(RenderContext &r, bool bind_shader) {
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_1D, m_permtex);
 
-  m_material->shader()->setUniform("permSampler", 0);
-  m_material->shader()->setUniform("gradSampler", 1);
+  m_material->shader()->setUniform(r, "permSampler", 0);
+  m_material->shader()->setUniform(r, "gradSampler", 1);
 
   glBindBuffer(GL_ARRAY_BUFFER, m_vbo[0]);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vbo[1]);
@@ -289,4 +290,5 @@ void Level::render(RenderContext &r, bool bind_shader) {
 
     glEnd();
   }
+  r.clearStuff();
 }

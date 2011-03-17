@@ -3,8 +3,10 @@
 #include "entity.hpp"
 #include "scene.hpp"
 #include "material.hpp"
+#include "utils.hpp"
 
 #include <stack>
+#include <string>
 
 RenderContext::RenderContext(Scene& scene) : m_scene(scene) {
 }
@@ -82,4 +84,16 @@ RenderContext::Objects& RenderContext::objects(Camera& camera) {
   }
 #endif
   return objs;
+}
+
+void RenderContext::setBuffer(std::string name, int num) {
+  m_buffers[name] = num;
+}
+
+void RenderContext::applyBuffers(unsigned int prog) {
+  if (m_buffers.empty()) return;
+  for (std::map<std::string, int>::iterator it = m_buffers.begin(); it != m_buffers.end(); ++it) {
+    glRun(glBindFragDataLocation(prog, it->second, it->first.c_str()));
+  }
+  glLinkProgram(prog);
 }

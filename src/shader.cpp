@@ -1,5 +1,6 @@
 #include "shader.hpp"
 #include "resource_manager.hpp"
+#include "render_context.hpp"
 
 #include <cassert>
 
@@ -78,7 +79,7 @@ GLProgram::~GLProgram() {
   if (m_prog) glDeleteProgram(m_prog);
 }
 
-bool GLProgram::bind() {
+bool GLProgram::bind(RenderContext& r) {
   if (!m_compiled) {
     if (!m_prog) {
       glCheck("GLProgram::bind");
@@ -99,6 +100,7 @@ bool GLProgram::bind() {
   }  
   if (isLinked()) {
     glRun(glUseProgram(m_prog));
+    r.applyBuffers(m_prog);
     return true;
   } else
     return false;

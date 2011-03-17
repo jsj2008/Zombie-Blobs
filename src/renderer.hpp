@@ -32,20 +32,22 @@ public:
   int height() const;
   int width() const;
   void resize(int w, int h) { m_width = w; m_height = h; }
+  void setScale(float x, float y) { m_scale[0] = x; m_scale[1] = y; }
 
   /// Render the pass
   virtual void render(RenderContext& r) = 0;
 
 protected:
-  void beginFBO();
+  void beginFBO(RenderContext& r);
   void endFBO();
 
   int m_width, m_height; /// Output size
+  float m_scale[2];
 
   FBOPtr m_fbo;
   FBOImagePtr m_depth;
-  typedef std::vector<FBOImagePtr> FBOImageList;
-  FBOImageList m_colors;
+  typedef std::map<std::string, FBOImagePtr> FBOImageList;
+  FBOImageList m_out;
 
   CameraPtr m_viewport;
   friend class Renderer;

@@ -80,6 +80,11 @@ CONFIG(release, debug|release) {
   DEFINES += NDEBUG
 }
 
+CONFIG(debug, debug|release) {
+  QMAKE_CXXFLAGS += -O0
+  QMAKE_CFLAGS += -O0
+}
+
 #QMAKE_CXXFLAGS += -pg -g
 #QMAKE_CFLAGS += -pg -g
 

@@ -1,6 +1,9 @@
-#version 120
-varying vec3 normal;
-varying vec3 vertex;
+#version 150 compatibility
+
+precision highp float;
+
+out vec3 normal;
+out vec3 vertex;
 uniform float time;
 
 void main()
@@ -10,6 +13,6 @@ void main()
 
   gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * v;
   vertex = (gl_ModelViewMatrix * v).xyz;
-  normal = normalize(gl_NormalMatrix * gl_Normal);
+  normal = gl_NormalMatrix * gl_Normal;
 	gl_FrontColor = gl_Color;
 }

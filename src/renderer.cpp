@@ -8,33 +8,54 @@
 #include "opengl.hpp"
 #include "math.hpp"
 
+class Random : public Texture
+{
+protected:
+  void texImage(int width, int height) {
+    srand(time(0));
+    float f[64*64*4];
+    float numDirs = 12.0f;
+    for(int i=0; i<64*64*4; i+=4) {
+      float angle = 2.0f * M_PI * (rand() / float(RAND_MAX)) / numDirs;
+      f[i  ] = cosf(angle);
+      f[i+1] = sinf(angle);
+      f[i+2] = rand() / float(RAND_MAX);
+      f[i+3] = 0;
+    }
+
+    glRun(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 64, 64,
+                       0, GL_RGBA, GL_FLOAT, f));
+  }
+};
+
 RenderPass::RenderPass() :
     m_width(0), m_height(0), m_viewport(new Camera()) {
+  m_scale[0] = m_scale[1] = 1.0f;
 }
 RenderPass::~RenderPass() {}
 
 int RenderPass::width() const {
-  return m_width;
+  return m_width * m_scale[0];
 }
 
 int RenderPass::height() const {
-  return m_height;
+  return m_height * m_scale[1];
 }
 
-void RenderPass::beginFBO() {
-  if (!m_depth && m_colors.empty())
+void RenderPass::beginFBO(RenderContext& r) {
+  if (!m_depth && m_out.empty())
     return;
 
   if (!m_fbo) {
     m_fbo.reset(new FrameBufferObject);
     if (m_depth) m_fbo->set(GL_DEPTH_ATTACHMENT, m_depth);
-    FBOImageList::iterator it = m_colors.begin();
+    FBOImageList::iterator it = m_out.begin();
     int i=0;
-    while (it != m_colors.end()) {
-      m_fbo->set(GL_COLOR_ATTACHMENT0 + i++, *it);
+    while (it != m_out.end()) {
+      r.setBuffer(it->first, i);
+      m_fbo->set(GL_COLOR_ATTACHMENT0 + i++, it->second);
       ++it;
     }
-    //if (m_color) m_fbo->set(GL_COLOR_ATTACHMENT0 + 0, m_color);
   }
 
   m_fbo->resize(width(), height());
@@ -54,10 +75,10 @@ PostProc::~PostProc() {}
 
 void PostProc::render(RenderContext& r) {
   r.push();
-  beginFBO();
+  beginFBO(r);
 
   if (!m_shader.shaders().empty())
-    m_shader.bind();
+    m_shader.bind(r);
 
   /// @todo handle shader input here
 
@@ -73,14 +94,14 @@ void PostProc::render(RenderContext& r) {
 
     int unit = r.reserveTexUnit();
     glCheck("bind");
-    tex->bind(unit);
+    tex->bind(unit, width(), height());
     glCheck("aftbind");
 
 
     if (!m_shader.isLinked())
       continue;
 
-    m_shader.setUniform(it->first, unit);    
+    m_shader.setUniform(r, it->first, unit);
 
   }
 
@@ -115,7 +136,7 @@ SceneRenderPass::SceneRenderPass() : m_clear(0) {}
 SceneRenderPass::~SceneRenderPass() {}
 
 void SceneRenderPass::render(RenderContext& r) {
-  beginFBO();  
+  beginFBO(r);
 
   m_viewport->prepare(width(), height());
   glClearColor(0, 0, 0, 1);
@@ -149,7 +170,7 @@ void HudRenderPass::render(RenderContext &r)
   btVector3 vel = Game::instance()->player()->getVelocity();
 
   r.push();
-  beginFBO();
+  beginFBO(r);
 
   r.disable(GL_DEPTH_TEST);
   r.disable(GL_LIGHTING);
@@ -220,22 +241,71 @@ void Renderer::render(Scene& scene) {
 }
 
 void Renderer::setupPasses() {
+  // 1st pass, render scene to textures:
+  // color, face normals and linearized depth buffer
   SceneRenderPass* scene = new SceneRenderPass;
   scene->setClearBits(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-  TexturePtr tex(new Texture());
-  TexturePtr normals(new Texture());
-  scene->m_colors.push_back(tex);
-  scene->m_colors.push_back(normals);
-  TexturePtr depth(new Texture());
 
-  scene->m_depth = depth;
+  TexturePtr diffuse(new Texture);
+  // raw face normals, not vertex/interpolated normals
+  TexturePtr normals(new Texture);
+  normals->setFormat(GL_RGB32F);
+  normals->setTextureParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  normals->setTextureParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  // linearized depth buffer
+  TexturePtr lindepth(new Texture);
+  lindepth->setFormat(GL_R32F);
+  scene->m_out["diffuse"] = diffuse;
+  scene->m_out["normals"] = normals;
+  scene->m_out["lindepth"] = lindepth;
+  scene->m_depth.reset(new RenderBuffer);
 
-  PostProc* post = new PostProc();
-  post->m_in["scene"] = tex;
-  post->m_in["sceneDepth"] = depth;
-  post->m_in["normals"] = normals;
-  if (!post->m_shader.addShader("postproc.fs", Shader::Fragment))
-    Log::error("could not load postproc shader postproc.fs");
+
+  // 2nd pass, render ssao to texture, with half the size of scene pass
+  PostProc* ssao = new PostProc;
+  ssao->setScale(0.5f, 0.5f);
+
+  TexturePtr ao(new Texture);
+  ao->setFormat(GL_R32F);
+  ssao->m_out["value"] = ao;
+  TexturePtr random(new Random);
+  random->setTextureParameter(GL_TEXTURE_WRAP_S, GL_REPEAT);
+  random->setTextureParameter(GL_TEXTURE_WRAP_T, GL_REPEAT);
+  random->setTextureParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  random->setTextureParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+  ssao->m_in["lindepth"] = lindepth;
+  ssao->m_in["normals"] = normals;
+  ssao->m_in["random"] = random;
+  if (!ssao->m_shader.addShader("ao.vs", Shader::Vertex))
+    Log::error("could not load postproc shader ao.vs");
+  if (!ssao->m_shader.addShader("ao.fs", Shader::Fragment))
+    Log::error("could not load postproc shader ao.fs");
+
+
+  // 3rd pass, depth-dependent gaussian blur to ao, full resolution (X-direction)
+  PostProc* blurx = new PostProc;
+
+  TexturePtr tmp(new Texture);
+  tmp->setFormat(GL_R32F);
+  blurx->m_out["blurred"] = tmp;
+
+  blurx->m_in["lindepth"] = lindepth;
+  blurx->m_in["image"] = ao;
+  if (!blurx->m_shader.addShader("blurx.fs", Shader::Fragment))
+    Log::error("could not load postproc shader blurx.fs");
+
+
+  // 4th pass, depth-dependent gaussian blur (Y-direction),
+  // also combine the scene color buffer with the blurred ao
+  PostProc* blury = new PostProc;
+
+  blury->m_in["lindepth"] = lindepth;
+  blury->m_in["diffuse"] = diffuse;
+  blury->m_in["blurred"] = tmp;
+  if (!blury->m_shader.addShader("blury.fs", Shader::Fragment))
+    Log::error("could not load postproc shader blury.fs");
+
 
   PlayerPtr player = Game::instance()->player();
   scene->m_viewport = player;
@@ -243,6 +313,8 @@ void Renderer::setupPasses() {
   HudRenderPass * hud = new HudRenderPass();
 
   m_render_passes.push_back(RenderPassPtr(scene));
-  m_render_passes.push_back(RenderPassPtr(post));
-  m_render_passes.push_back(RenderPassPtr(hud));
+  m_render_passes.push_back(RenderPassPtr(ssao));
+  m_render_passes.push_back(RenderPassPtr(blurx));
+  m_render_passes.push_back(RenderPassPtr(blury));
+  //m_render_passes.push_back(RenderPassPtr(hud));
 }

@@ -5,6 +5,7 @@
 #include "state.hpp"
 
 #include <map>
+#include <string>
 
 class RenderContext : public State {
 public:
@@ -17,11 +18,18 @@ public:
   void renderObjects(Camera& camera);
   void popLights();
 
+  void setBuffer(std::string name, int num);
+
   Objects& objects(Camera& camera);
+
+  void applyBuffers(unsigned int prog);
+  void clearStuff() { m_buffers.clear(); }
+
 protected:
   Scene& m_scene;
   typedef std::map<Camera*, Objects> Cache;
   Cache m_cache;
+  std::map<std::string, int> m_buffers;
 };
 
 

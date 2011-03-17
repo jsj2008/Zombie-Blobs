@@ -78,7 +78,7 @@ public:
    * program object. Also (re)compiles all the shaders and (re)links the program
    * if needed.
    */
-  bool bind();
+  bool bind(RenderContext& r);
 
   /// Unbinds the program object.
   void unbind();
@@ -86,12 +86,12 @@ public:
   /// Sets a uniform variable, binds the object if needed,
   /// and restores the active program before returning.
   template <typename T>
-  void setUniform(const std::string& name, T t, bool restore = false) {
+  void setUniform(RenderContext& r, const std::string& name, T t, bool restore = false) {
     glCheck("setUniform");
     GLint prog = 0;
     glRun(glGetIntegerv(GL_CURRENT_PROGRAM, &prog));
     if (!prog != m_prog)
-      bind();
+      bind(r);
 
     GLint loc = glRun2(glGetUniformLocation(m_prog, name.c_str()));
     if(loc == -1) {
