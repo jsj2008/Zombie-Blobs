@@ -7,6 +7,8 @@
 #include "level.hpp"
 #include "opengl.hpp"
 #include "math.hpp"
+#include "model.hpp"
+#include "player.hpp"
 
 class Random : public Texture
 {
@@ -175,12 +177,15 @@ void HudRenderPass::render(RenderContext &r)
   r.disable(GL_DEPTH_TEST);
   r.disable(GL_LIGHTING);
 
+  r.enable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
   m_viewport->prepare(width(), height()); // normalized coords
 
   // 60 units is one round
   float speed = (vel.length() / 60) * (2*3.145926f) ;
 
-  btVector3 needleBase(0.8f, 0.2f, 0);
+  btVector3 needleBase(0.2f, 0.2f, 0);
   float radius = 0.1f;
 
   btVector3 needle[3];
@@ -199,17 +204,141 @@ void HudRenderPass::render(RenderContext &r)
     needle[i].setY(needle[i].y() * height());
   }
 
-  glColor4f(speed/(2*M_PI), 0, 0, 1);
+  glColor4f(speed/(2*M_PI), 0, 0, 0.5);
 
   glBegin(GL_TRIANGLES);
   for (int i=0; i<3; ++i)
     glVertex2fv(needle[i].m_floats);
   glEnd();
 
-  /* Draw a map
+  /* Draw a map */
   btVector3 * bb = Game::instance()->level()->aabb();
   btVector3 size = bb[1] - bb[0];
+  btAlignedObjectArray<Enemy*> enemies = Game::instance()->level()->getEnemies();
+
+  // :(
+  size.setX(1000);
+  size.setY(1000);
+  size.setZ(100);
+
+  float aspect = size.x() / size.y();
+
+  const float w = 0.2f;
+  const float h = w*aspect;
+  float padX = 0.02f;
+  float padY = padX*aspect;
+
+
+  glPushMatrix();
+  // scale and translate so that map bounding box is contained in
+  // [1-w-pad, 1-pad] x [pad, pad+h]
+
+  glScalef(width(), width(), 1.0f);
+  glTranslatef( 1 - w - padX, padY, 0);
+  //glScalef(w, h, 1);
+  glScalef(w/size.x(), h/size.y(), 1.0f);
+
+  /*
+  glColor4f(1,1,1,0.1);
+  glBegin(GL_QUADS);
+  for (int i=0; i < 4; ++i) {
+    glVertex2f(0, 0);
+    glVertex2f(size.x(), 0);
+    glVertex2f(size.x(), size.y());
+    glVertex2f(0, size.y());
+  }
+  glEnd();
   */
+
+  glColor4f(1,1,1,0.2);
+  TexturePtr tex = Game::instance()->level()->mapTexture();  
+  tex->bind();
+
+  glBlendFuncSeparate(
+      GL_ONE_MINUS_SRC_COLOR,
+      GL_SRC_COLOR,
+      GL_ONE,
+      GL_ONE
+      );
+
+  glBegin(GL_QUADS);
+  for (int i=0; i < 4; ++i) {
+    glTexCoord2f(0, 0);
+    glVertex2f(0, 0);
+
+    glTexCoord2f(1, 0);
+    glVertex2f(size.x(), 0);
+
+    glTexCoord2f(1, 1);
+    glVertex2f(size.x(), size.y());
+
+    glTexCoord2f(0, 1);
+    glVertex2f(0, size.y());
+  }
+  glEnd();
+  tex->unbind();
+
+  glBlendEquation(GL_FUNC_ADD);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
+  PlayerPtr player = Game::instance()->player();
+  btVector3 ppos = 2*player->getPosition();
+  btVector3 pdir = player->front();
+
+  btVector3 pdirXY(pdir.x(), pdir.y(), 0);
+  pdirXY.normalize();
+
+  // fov in radians
+  float fov = player->fov() * (M_PI / 180.f);
+  btVector3 side1 = pdirXY.rotate(btVector3(0, 0, 1), fov);
+  btVector3 side2 = pdirXY.rotate(btVector3(0, 0, 1), -fov);
+
+
+
+
+  glBegin(GL_TRIANGLES);
+  glColor4f(1, 1, 0, 0.7);
+  glVertex2fv( ppos.m_floats );
+  glColor4f(1, 1, 0, 0);
+  glVertex2fv( (ppos+side2*2*player->fardist()).m_floats);
+  glVertex2fv( (ppos+side1*2*player->fardist()).m_floats);
+  glEnd();
+
+
+
+  glColor4f(0, 1, 0, 1);
+  glPointSize(2);
+  glBegin(GL_POINTS);
+  for (int i=0; i < enemies.size(); ++i) {
+    Enemy& enemy = *enemies[i];
+    btVector3 orig = 2*enemy.getModel()->getCollisionObject()->getWorldTransform().getOrigin();
+    glVertex2fv(orig.m_floats);
+  }
+  glEnd();
+
+  /*
+  btAlignedObjectArray<btVector3> corners;
+  player->frustumCorners(corners);
+
+  for (int k=0; k < 2; ++k) {
+    glBegin(GL_LINE_LOOP);
+    for (int i=0; i < 4; ++i) {
+      glVertex2fv( (2*corners[i+k*4]).m_floats);
+    }
+    glEnd();
+  }
+  */
+
+  glColor4f(1, 0, 0, 1);
+  glPointSize(5);
+  glBegin(GL_POINTS); 
+  glVertex2fv(ppos.m_floats);
+  glEnd();
+
+  glPopMatrix();
+
+  r.disable(GL_BLEND);
 
   endFBO();
   r.pop();
@@ -249,12 +378,12 @@ void Renderer::setupPasses() {
   TexturePtr diffuse(new Texture);
   // raw face normals, not vertex/interpolated normals
   TexturePtr normals(new Texture);
-  normals->setFormat(GL_RGB32F);
+  normals->setInternalFormat(GL_RGB32F);
   normals->setTextureParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   normals->setTextureParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   // linearized depth buffer
   TexturePtr lindepth(new Texture);
-  lindepth->setFormat(GL_R32F);
+  lindepth->setInternalFormat(GL_R32F);
   scene->m_out["diffuse"] = diffuse;
   scene->m_out["normals"] = normals;
   scene->m_out["lindepth"] = lindepth;
@@ -266,7 +395,7 @@ void Renderer::setupPasses() {
   ssao->setScale(0.5f, 0.5f);
 
   TexturePtr ao(new Texture);
-  ao->setFormat(GL_R32F);
+  ao->setInternalFormat(GL_R32F);
   ssao->m_out["value"] = ao;
   TexturePtr random(new Random);
   random->setTextureParameter(GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -287,7 +416,7 @@ void Renderer::setupPasses() {
   PostProc* blurx = new PostProc;
 
   TexturePtr tmp(new Texture);
-  tmp->setFormat(GL_R32F);
+  tmp->setInternalFormat(GL_R32F);
   blurx->m_out["blurred"] = tmp;
 
   blurx->m_in["lindepth"] = lindepth;
@@ -316,5 +445,5 @@ void Renderer::setupPasses() {
   m_render_passes.push_back(RenderPassPtr(ssao));
   m_render_passes.push_back(RenderPassPtr(blurx));
   m_render_passes.push_back(RenderPassPtr(blury));
-  //m_render_passes.push_back(RenderPassPtr(hud));
+  m_render_passes.push_back(RenderPassPtr(hud));
 }

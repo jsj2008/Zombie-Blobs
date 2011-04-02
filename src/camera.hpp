@@ -2,6 +2,8 @@
 #define CAMERA_HPP
 
 #include <LinearMath/btVector3.h>
+#include <LinearMath/btAlignedObjectArray.h>
+#include <vectormath/vmInclude.h>
 
 /**
  * OpenGL Camera class, handles perspective and ortho projections.
@@ -31,6 +33,10 @@ public:
     if (!preserve_look_dir)
       m_center = m_eye + diff;
   }
+
+  // Calculates the eight corners of the view frustum in
+  // world coordinates
+  bool frustumCorners(btAlignedObjectArray<btVector3>& corners);
 
   /// @todo
   btVector3 pos() const { return m_eye; }

@@ -27,6 +27,9 @@ public:
   void load();
   // winning condition
   // random seed
+
+  const btAlignedObjectArray<Enemy*>& getEnemies() { return m_blobs; }
+  TexturePtr mapTexture() { return m_map; }
 private:
   TGAImage m_heightMap;
   unsigned int m_vbo;
@@ -39,6 +42,8 @@ private:
   typedef std::set<std::pair<Enemy*, Enemy*> > EnemyGraph;
   EnemyGraph m_neighbours;
   btVector3 m_bb[2]; // (min, max)
+
+  TexturePtr m_map;
 
   unsigned int m_permtex, m_gradtex;
 

@@ -74,6 +74,8 @@ public:
   virtual ~HudRenderPass();
 
   void render(RenderContext &r);
+private:
+  TexturePtr m_map;
 };
 
 class SceneRenderPass : public RenderPass {

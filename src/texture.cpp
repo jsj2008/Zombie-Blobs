@@ -1,10 +1,13 @@
 #include "texture.hpp"
 #include "opengl.hpp"
+#include "utils.hpp"
 
 #include <cassert>
 
 Texture::Texture()
-  : m_format(4), m_id(0), m_bindedTexture(0) {
+  : m_internalFormat(4), m_id(0), m_bindedTexture(0),
+  m_format(GL_RGBA), m_dataType(GL_UNSIGNED_BYTE)
+{
   m_parameters[GL_TEXTURE_WRAP_S] = GL_CLAMP_TO_EDGE;
   m_parameters[GL_TEXTURE_WRAP_T] = GL_CLAMP_TO_EDGE;
   m_parameters[GL_TEXTURE_MAG_FILTER] = GL_LINEAR;
@@ -70,7 +73,7 @@ void Texture::texImage(int width, int height) {
   } else if (m_type == GL_STENCIL_ATTACHMENT) {
     /// @todo implement
   } else {
-    glRun(glTexImage2D(GL_TEXTURE_2D, 0 /* level */, m_format, width, height,
-                       0 /* border */, GL_RGBA, GL_UNSIGNED_BYTE, 0 /* data */));
+    glRun(glTexImage2D(GL_TEXTURE_2D, 0 /* level */, m_internalFormat, width, height,
+                       0 /* border */, m_format, m_dataType, getData() /* data */));
   }
 }

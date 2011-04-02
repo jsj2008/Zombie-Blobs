@@ -14,6 +14,7 @@
 #include "game.hpp"
 #include "physics.hpp"
 #include "render_context.hpp"
+#include "texture.hpp"
 
 Level::Level() : m_vbo(0), m_permtex(0), m_gradtex(0) {
 }
@@ -22,12 +23,23 @@ void Level::load() {
   if (m_verts.size())
     return;
   bool ok = m_heightMap.load(std::string("map.tga"));
+
   assert(ok);
   m_material = new Material();
   GLProgram * program = new GLProgram();
   program->addShader("level.vs", Shader::Vertex);
   program->addShader("level.fs", Shader::Fragment);
   m_material->setShader(program);
+
+  ImageTexture * tex = new ImageTexture;
+  tex->setFormat(GL_LUMINANCE);
+  tex->setDataType(GL_UNSIGNED_BYTE);
+  tex->setInternalFormat(1);
+
+  tex->setData(m_heightMap.m_data, false);
+  tex->setup(0, m_heightMap.m_width, m_heightMap.m_height);
+
+  m_map.reset(tex);
 
 #if 1
   m_blobMaterial = new Material();
@@ -44,25 +56,8 @@ void Level::load() {
     MarchingCubes::triangulateGrid(m_heightMap.m_data, m_heightMap.m_width, m_heightMap.m_height,
                                    m_verts, m_indices, m_normals);
 
-    m_bb[0] = m_bb[1] = m_verts[0];
 
-    for (int i=0; i < m_verts.size(); ++i) {
-      m_bb[0].setX(std::min(m_bb[0].x(), m_verts[i].x()));
-      m_bb[0].setY(std::min(m_bb[0].y(), m_verts[i].y()));
-      m_bb[0].setZ(std::min(m_bb[0].z(), m_verts[i].z()));
-
-      m_bb[1].setX(std::max(m_bb[1].x(), m_verts[i].x()));
-      m_bb[1].setY(std::max(m_bb[1].y(), m_verts[i].y()));
-      m_bb[1].setZ(std::max(m_bb[1].z(), m_verts[i].z()));
-
-      // m_verts[i].setW(1);
-      // m_normals[i].setW(1);
-    }
     Log::info("vertices %d, m_normals %d", m_verts.size(), m_normals.size());
-    Log::info("bb (%f,%f,%f) -> (%f, %f, %f)",
-              m_bb[0].x(), m_bb[0].y(), m_bb[0].z(),
-              m_bb[1].x(), m_bb[1].y(), m_bb[1].z()
-              );
 
     fp = fopen("level.data", "w+");
     int count = m_verts.size();
@@ -88,6 +83,23 @@ void Level::load() {
   Log::info("Adding level mesh to physics engine");
   Game::instance()->physics()->addTrimesh(m_verts, m_indices, use_cache ? "level.bullet.data" : "");
   Log::info("Done");
+
+  m_bb[0] = m_bb[1] = m_verts[0];
+
+  for (int i=0; i < m_verts.size(); ++i) {
+    m_bb[0].setX(std::min(m_bb[0].x(), m_verts[i].x()));
+    m_bb[0].setY(std::min(m_bb[0].y(), m_verts[i].y()));
+    m_bb[0].setZ(std::min(m_bb[0].z(), m_verts[i].z()));
+
+    m_bb[1].setX(std::max(m_bb[1].x(), m_verts[i].x()));
+    m_bb[1].setY(std::max(m_bb[1].y(), m_verts[i].y()));
+    m_bb[1].setZ(std::max(m_bb[1].z(), m_verts[i].z()));
+  }
+  Log::info("Level bounding box (%f,%f,%f) -> (%f, %f, %f)",
+            m_bb[0].x(), m_bb[0].y(), m_bb[0].z(),
+            m_bb[1].x(), m_bb[1].y(), m_bb[1].z()
+            );
+
 
   for (int y=0; y < m_heightMap.m_height; ++y) {
     for (int x=0; x < m_heightMap.m_width; ++x) {
