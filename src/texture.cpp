@@ -5,7 +5,7 @@
 #include <cassert>
 
 Texture::Texture()
-  : m_internalFormat(4), m_id(0), m_bindedTexture(0),
+  : m_internalFormat(4), m_id(0), m_boundTexture(0),
   m_format(GL_RGBA), m_dataType(GL_UNSIGNED_BYTE)
 {
   m_parameters[GL_TEXTURE_WRAP_S] = GL_CLAMP_TO_EDGE;
@@ -21,20 +21,20 @@ Texture::~Texture() {
 
 void Texture::bind(int texture, int width, int height) {
   if (m_id == 0) setup(0, width, height);
-  m_bindedTexture = texture;
-  glRun(glActiveTexture(GL_TEXTURE0 + m_bindedTexture));
+  m_boundTexture = texture;
+  glRun(glActiveTexture(GL_TEXTURE0 + m_boundTexture));
   glRun(glBindTexture(GL_TEXTURE_2D, m_id));
 }
 
 void Texture::bind(int texture) {
   assert(m_id);
-  m_bindedTexture = texture;
-  glRun(glActiveTexture(GL_TEXTURE0 + m_bindedTexture));
+  m_boundTexture = texture;
+  glRun(glActiveTexture(GL_TEXTURE0 + m_boundTexture));
   glRun(glBindTexture(GL_TEXTURE_2D, m_id));
 }
 
 void Texture::unbind() {
-  glRun(glActiveTexture(GL_TEXTURE0 + m_bindedTexture));
+  glRun(glActiveTexture(GL_TEXTURE0 + m_boundTexture));
   glRun(glBindTexture(GL_TEXTURE_2D, 0));
 }
 

@@ -36,7 +36,7 @@ protected:
   int m_internalFormat;
   GLenum m_format;
   GLenum m_dataType;
-  unsigned int m_id, m_bindedTexture;
+  unsigned int m_id, m_boundTexture;
 
 
   typedef std::map<GLenum, GLint> Parameters;
