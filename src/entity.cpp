@@ -7,6 +7,7 @@
 #include "model.hpp"
 #include "physics.hpp"
 #include "math.hpp"
+#include "obj_loader.hpp"
 
 #include <btBulletDynamicsCommon.h>
 
@@ -62,14 +63,15 @@ void Renderable::update(float dt) {
 }
 
 
-Entity::Entity() : m_model(0) {}
+Entity::Entity(Model* model) : m_model(model) {}
 
 Entity::~Entity() {}
 
 void Entity::render(RenderContext& r, bool bind_shader) {
   if (m_material)
     m_material->bind(r, *this, bind_shader);
-
+  if (m_model)
+    m_model->render();
 }
 
 void Entity::update(float dt) {
@@ -86,6 +88,12 @@ bool Entity::load(const std::string& file) {
   Game::instance()->physics()->addRigidBody(col);
   m_model = new Model(col);
   return true;
+}
+
+EntityPtr Entity::loadFile(const std::string& file) {
+  ObjLoader l;
+  if (l.load(file)) return l.entity();
+  return EntityPtr();
 }
 
 

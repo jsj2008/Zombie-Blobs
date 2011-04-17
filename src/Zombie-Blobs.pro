@@ -28,7 +28,9 @@ SOURCES += \
     grid.cpp \
     tga_image.cpp \
     physics.cpp \
-    marching_cubes.cpp
+    marching_cubes.cpp \
+    parser.cpp \
+    obj_loader.cpp
 
 HEADERS += \
     game.hpp \
@@ -60,7 +62,9 @@ HEADERS += \
     tga_image.h \
     physics.hpp \
     marching_cubes.hpp \
-    math.hpp
+    math.hpp \
+    parser.hpp \
+    obj_loader.hpp
 
 CONFIG += link_pkgconfig
 
