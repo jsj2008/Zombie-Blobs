@@ -62,6 +62,9 @@ void Renderable::update(float dt) {
   }
 }
 
+const btTransform * Renderable::worldTransform() const {
+  return 0;
+}
 
 Entity::Entity(Model* model) : m_model(model) {}
 
@@ -96,6 +99,12 @@ EntityPtr Entity::loadFile(const std::string& file) {
   return EntityPtr();
 }
 
+const btTransform * Entity::worldTransform() const {
+  if (!m_model) return 0;
+  btCollisionObject* co = m_model->getCollisionObject();
+  return co ? &co->getWorldTransform() : 0;
+}
+
 
 Enemy::Enemy() : Entity() {}
 
@@ -104,19 +113,8 @@ Enemy::~Enemy() {}
 void Enemy::render(RenderContext& r, bool bind_shader) {
   Entity::render(r, bind_shader);
 
-
   if (!m_model || !m_model->getCollisionObject())
     return;
-
-  btTransform & m = m_model->getCollisionObject()->getWorldTransform();
-
-  btScalar transform[16];
-  m.getOpenGLMatrix(transform);
-
-  glMatrixMode(GL_MODELVIEW);
-
-  glPushMatrix();
-  glMultMatrixf(transform);
 
   btSphereShape * sp2 = dynamic_cast<btSphereShape*>(m_model->getCollisionObject()->getCollisionShape());
   btScalar rad = sp2->getRadius();
@@ -124,8 +122,6 @@ void Enemy::render(RenderContext& r, bool bind_shader) {
   glScalef(rad, rad, rad);
   glColor4f(0, 1, 0, 0.6);
   unitSphere(30);
-
-  glPopMatrix();
 }
 
 void Enemy::update(float dt) {

@@ -49,5 +49,6 @@ typedef std::shared_ptr<Physics> PhysicsPtr;
 
 class btBroadphaseInterface;
 class btSoftRigidDynamicsWorld;
+class btTransform;
 
 #endif // FORWARD_HPP

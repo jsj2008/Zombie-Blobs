@@ -40,6 +40,7 @@ bool Game::init()
   InputHandler::setKey(SDLK_d, "move right");
   InputHandler::setKey(SDLK_r, "move up");
   InputHandler::setKey(SDLK_f, "move down");
+  InputHandler::setKey(SDLK_SPACE, "test");
 
   m_physics->init();
   m_level->load();

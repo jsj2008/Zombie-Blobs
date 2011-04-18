@@ -25,6 +25,9 @@ public:
   Children & getChildren() { return m_children; }
   void addChild(RenderablePtr ch) { m_children.insert(ch); }
   void setMaterial(Material * m) { m_material = m; }
+
+  virtual const btTransform * worldTransform() const;
+
 protected:
   Material* m_material;
 private:
@@ -42,6 +45,8 @@ public:
 
   virtual bool load(const std::string& file);
   static EntityPtr loadFile(const std::string& file);
+
+  virtual const btTransform * worldTransform() const;
 
   Model * getModel() { return m_model; }
 protected:  
