@@ -11,6 +11,7 @@ void Model::render() {}
 TriMesh::TriMesh() : m_vbo() {}
 
 void TriMesh::render() {
+  glColor4f(1, 1, 1, 1);
   int vsize = sizeof(m_vertices[0])*m_vertices.size(),
      nsize = sizeof(m_normals[0])*m_normals.size(),
      isize = sizeof(m_indices[0])*m_indices.size();

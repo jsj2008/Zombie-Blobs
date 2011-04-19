@@ -3,6 +3,10 @@
 #include "game.hpp"
 #include "physics.hpp"
 #include "math.hpp"
+#include "entity.hpp"
+#include "model.hpp"
+#include "scene.hpp"
+#include "material.hpp"
 
 #include <LinearMath/btVector3.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
@@ -34,6 +38,23 @@ void Player::init(const btVector3& pos) {
 void Player::update() {
   btTransform & m = m_body->getWorldTransform();
   moveTo(m.getOrigin());
+
+  static InputEvent& test = InputHandler::event("test");
+  if (test.pressed) {
+    EntityPtr obj = Entity::loadFile("suzanne.obj");
+    btCollisionShape * shape = new btSphereShape(2.0f);
+    float mass = 8.0f;
+    btTransform trans = m;
+    trans.setOrigin(trans.getOrigin() + m_eye.normalized() * 1.0f);
+    btRigidBody * col = new btRigidBody(mass, new btDefaultMotionState(trans), shape);
+    Game::instance()->physics()->addRigidBody(col);
+    obj->getModel()->setCollisionObject(col);
+    Game::instance()->scene()->root()->addChild(obj);
+    GLProgram * program = new GLProgram();
+    program->addShader("level.vs", Shader::Vertex);
+    program->addShader("level.fs", Shader::Fragment);
+    obj->setMaterial(new Material(program));
+  }
 }
 
 void Player::move(float dx, float dy, float dz)

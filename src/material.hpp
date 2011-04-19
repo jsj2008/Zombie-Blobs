@@ -5,7 +5,7 @@
 
 class Material {
 public:
-  Material();
+  Material(GLProgram* prog = 0);
   void bind(RenderContext& r, Renderable& obj, bool bind_shader);
 
   GLProgram* shader() { return m_shader; }

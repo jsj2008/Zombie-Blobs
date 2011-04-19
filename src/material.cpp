@@ -3,7 +3,7 @@
 #include "shader.hpp"
 #include "game.hpp"
 
-Material::Material() : m_shader(0) {
+Material::Material(GLProgram* shader) : m_shader(shader) {
 }
 
 void Material::bind(RenderContext& r, Renderable& obj, bool bind_shader) {

@@ -35,6 +35,8 @@ public:
   PlayerPtr player() { return m_player; }
   LevelPtr level() { return m_level; }
   PhysicsPtr physics() { return m_physics; }
+  Scene* scene() { return m_scene; }
+
 private:
   typedef std::list<CameraPtr> Cameras;
 
