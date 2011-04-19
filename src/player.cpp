@@ -43,10 +43,11 @@ void Player::update() {
   if (test.pressed) {
     EntityPtr obj = Entity::loadFile("suzanne.obj");
     btCollisionShape * shape = new btSphereShape(2.0f);
-    float mass = 8.0f;
+    float mass = 6.0f;
     btTransform trans = m;
-    trans.setOrigin(trans.getOrigin() + m_eye.normalized() * 1.0f);
-    btRigidBody * col = new btRigidBody(mass, new btDefaultMotionState(trans), shape);
+    trans.setOrigin(trans.getOrigin() + (m_center - m_eye).normalized() * 7.0f);
+    btRigidBody * col = new btRigidBody(mass, new btDefaultMotionState(trans),
+                                        shape, btVector3(1, 1, 1));
     Game::instance()->physics()->addRigidBody(col);
     obj->getModel()->setCollisionObject(col);
     Game::instance()->scene()->root()->addChild(obj);

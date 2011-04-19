@@ -29,6 +29,14 @@ void State::disable(GLenum cap) {
   glDisable(cap);
 }
 
+void State::enable(GLenum cap, int index) {
+  glEnablei(cap, index);
+}
+
+void State::disable(GLenum cap, int index) {
+  glDisablei(cap, index);
+}
+
 int State::reserveTexUnit() {
   int unit = nextFree(m_data.top().m_texunits);
   m_data.top().m_texunits.insert(unit);

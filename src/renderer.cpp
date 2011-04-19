@@ -50,18 +50,18 @@ void RenderPass::beginFBO(RenderContext& r) {
 
   if (!m_fbo) {
     m_fbo.reset(new FrameBufferObject);
-    if (m_depth) m_fbo->set(GL_DEPTH_ATTACHMENT, m_depth);
+    if (m_depth) m_fbo->set(GL_DEPTH_ATTACHMENT, -1, m_depth);
     FBOImageList::iterator it = m_out.begin();
     int i=0;
     while (it != m_out.end()) {
       r.setBuffer(it->first, i);
-      m_fbo->set(GL_COLOR_ATTACHMENT0 + i++, it->second);
-      ++it;
+      m_fbo->set(GL_COLOR_ATTACHMENT0 + i, i, it->second);
+      ++it, ++i;
     }
   }
 
   m_fbo->resize(width(), height());
-  m_fbo->bind();
+  m_fbo->bind(r);
 }
 
 void RenderPass::endFBO() {
@@ -138,6 +138,7 @@ SceneRenderPass::SceneRenderPass() : m_clear(0) {}
 SceneRenderPass::~SceneRenderPass() {}
 
 void SceneRenderPass::render(RenderContext& r) {
+  r.enable(GL_BLEND);
   beginFBO(r);
 
   m_viewport->prepare(width(), height());
@@ -150,16 +151,15 @@ void SceneRenderPass::render(RenderContext& r) {
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
   glShadeModel(GL_SMOOTH);
-  r.enable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   r.pushLights(*m_viewport);
   r.renderObjects(*m_viewport);
   r.popLights();
 
-  r.disable(GL_BLEND);
 
   endFBO();
+  r.disable(GL_BLEND);
 }
 
 HudRenderPass::HudRenderPass() : RenderPass() {
@@ -387,6 +387,9 @@ void Renderer::setupPasses() {
   scene->m_out["diffuse"] = diffuse;
   scene->m_out["normals"] = normals;
   scene->m_out["lindepth"] = lindepth;
+  diffuse->setBufferState(GL_BLEND, false);
+  normals->setBufferState(GL_BLEND, false);
+  lindepth->setBufferState(GL_BLEND, false);
   scene->m_depth.reset(new RenderBuffer);
 
 
@@ -441,9 +444,20 @@ void Renderer::setupPasses() {
 
   HudRenderPass * hud = new HudRenderPass();
 
+
+  PostProc* debug = new PostProc;
+
+  debug->m_in["diffuse"] = diffuse;
+  debug->m_in["normals"] = normals;
+  debug->m_in["lindepth"] = lindepth;
+  debug->m_in["ao"] = ao;
+  if (!debug->m_shader.addShader("debug.fs", Shader::Fragment))
+    Log::error("could not load postproc shader debug.fs");
+
   m_render_passes.push_back(RenderPassPtr(scene));
   m_render_passes.push_back(RenderPassPtr(ssao));
   m_render_passes.push_back(RenderPassPtr(blurx));
   m_render_passes.push_back(RenderPassPtr(blury));
   m_render_passes.push_back(RenderPassPtr(hud));
+  m_render_passes.push_back(RenderPassPtr(debug));
 }

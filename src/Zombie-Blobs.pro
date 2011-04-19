@@ -66,6 +66,9 @@ HEADERS += \
     parser.hpp \
     obj_loader.hpp
 
+OTHER_FILES += ao.fs ao.vs blob.fs blob.vs blurx.fs blury.fs level.fs level.vs postproc.fs \
+    debug.fs
+
 CONFIG += link_pkgconfig
 
 INCLUDEPATH += $$PWD/glew/include

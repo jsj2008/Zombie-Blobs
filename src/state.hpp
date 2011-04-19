@@ -34,6 +34,10 @@ public:
   void enable(GLenum cap);
   /// Get GL capability
   void disable(GLenum cap);
+  /// Set indexed GL capability
+  void enable(GLenum cap, int index);
+  /// Get indexed GL capability
+  void disable(GLenum cap, int index);
 
   /// Reserves and returns next free texture unit
   int reserveTexUnit();

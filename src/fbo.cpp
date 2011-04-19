@@ -1,10 +1,23 @@
 #include "fbo.hpp"
 #include "opengl.hpp"
+#include "render_context.hpp"
 
 #include <cassert>
 
 FBOImage::FBOImage() : m_id(0), m_type(0), m_active_type(0),
-    m_width(0), m_height(0) {
+    m_width(0), m_height(0), m_bufferIndex(0) {
+}
+
+void FBOImage::applyBufferState(RenderContext& r) {
+  for (std::map<int, bool>::const_iterator it = m_bufferState.begin(); it != m_bufferState.end(); ++it) {
+    if (it->first >= 0) {
+      if (it->second) r.enable(it->first, m_bufferIndex);
+      else r.disable(it->first, m_bufferIndex);
+    } else {
+      if (it->second) r.enable(it->first);
+      else r.disable(it->first);
+    }
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -66,14 +79,14 @@ void FrameBufferObject::resize(int width, int heigth) {
   m_height = heigth;
 }
 
-void FrameBufferObject::set(int type, FBOImagePtr buffer) {
+void FrameBufferObject::set(int type, int index, FBOImagePtr buffer) {
   assert(buffer);
 
-  buffer->setType(type);
+  buffer->setBuffer(index, type);
   m_buffers[type] = buffer;
 }
 
-void FrameBufferObject::bind() {
+void FrameBufferObject::bind(RenderContext& r) {
   if (m_id == 0)
     glRun(glGenFramebuffers(1, &m_id));
 
@@ -89,8 +102,10 @@ void FrameBufferObject::bind() {
   glRun( glDrawBuffers(maxAttachments, buffers) );
   delete[] buffers;
 
-  for (Buffers::iterator it = m_buffers.begin(); it != m_buffers.end(); ++it)
+  for (Buffers::iterator it = m_buffers.begin(); it != m_buffers.end(); ++it) {
     it->second->setup(m_id, m_width, m_height);
+    it->second->applyBufferState(r);
+  }
 
   GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER_EXT);
   assert(status == GL_FRAMEBUFFER_COMPLETE);
